@@ -1,6 +1,6 @@
 {
-  "name": "Stratum CRM",
-  "short_name": "CRM",
+  "name": "Reporting and Management System",
+  "short_name": "RMS",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
