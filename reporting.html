@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporting Module</title>
+  <style>
+    :root { --bg: #f3f4f6; --card: #ffffff; --border: #e1e1e1; --primary: #0078d4; --muted: #605e5c; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #252423; }
+    .wrap { padding: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    h2, h3 { margin-top: 0; color: var(--primary); }
+    p { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--primary); border-radius: 8px; padding: 16px; }
+    .kpi h4 { margin: 0 0 8px; font-size: 0.72rem; text-transform: uppercase; color: var(--muted); }
+    .kpi strong { font-size: 2rem; }
+    .chart-card { min-width: 0; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+    .chart-card h4 { margin: 0 0 4px; color: #252423; font-size: .95rem; }
+    .chart-card p { margin: 0 0 14px; font-size: .8rem; }
+    .chart-canvas-wrap { height: 290px; position: relative; }
+    .chart-notice { display: none; padding: 12px; border-radius: 6px; background: #fff4ce; color: #605e5c; }
+    .chart-drilldown { grid-column: 1 / -1; }
+    .drilldown-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .drilldown-heading button { border: 1px solid var(--primary); background: #fff; color: var(--primary); border-radius: 5px; padding: 8px 12px; font: inherit; font-weight: 600; cursor: pointer; }
+    .drilldown-heading button:hover { background: #eef6fc; }
+    .chart-drilldown canvas { cursor: pointer; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    input { width: 100%; padding: 9px 10px; border: 1px solid #8a8886; border-radius: 4px; }
+    .hospital-report { margin-top: 20px; }
+    @media (max-width: 760px) {
+      .wrap { padding: 12px; }
+      .chart-grid { grid-template-columns: 1fr; }
+      .chart-canvas-wrap { height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <script>window.location.replace(new URL('index.html?view=view-reporting', window.location.href).href);</script>
+  <noscript><p>This module requires JavaScript. <a href="index.html?view=view-reporting">Open Reporting in the secure dashboard</a>.</p></noscript>
+  <div class="wrap">
+    <div class="card">
+      <h2>Executive Analytics & Report Canvas</h2>
+      <div class="grid" style="margin-bottom:16px;">
+        <div class="field"><label>Start Date</label><input id="report-start-date" type="date" onchange="renderReporting()" /></div>
+        <div class="field"><label>End Date</label><input id="report-end-date" type="date" onchange="renderReporting()" /></div>
+        <div class="field"><label>Report Month</label><input id="report-month" type="month" /></div>
+      </div>
+      <p id="report-period-label">Monthly reports run from the first Sunday through the Saturday before the next month's first Sunday.</p>
+      <div class="grid">
+        <div class="kpi"><h4>Total Active Souls</h4><strong id="report-souls">0</strong></div>
+        <div class="kpi"><h4>Total Families</h4><strong id="report-families">0</strong></div>
+      </div>
+      <div class="grid" style="margin-top:12px;">
+        <div class="kpi"><h4>Total Youth</h4><strong id="report-youth">0</strong></div>
+        <div class="kpi"><h4>Total Children</h4><strong id="report-children">0</strong></div>
+      </div>
+      <div class="grid" style="margin-top:12px;">
+        <div class="kpi"><h4>Total Visitors</h4><strong id="report-visitors">0</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Hospital Visits</h3>
+      <div class="grid hospital-report">
+        <div class="kpi"><h4>Members Currently in Hospital</h4><strong id="report-hospital-current">0</strong></div>
+        <div class="kpi"><h4>People Admitted and Visited This Period</h4><strong id="report-hospital-admitted-visited">0</strong></div>
+        <div class="kpi"><h4>Admissions This Period</h4><strong id="report-hospital-admissions">0</strong></div>
+        <div class="kpi"><h4>Hospital Visits This Period</h4><strong id="report-hospital-visits">0</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Management Overview</h3>
+      <div class="chart-notice" id="chart-notice" role="status"></div>
+      <div class="chart-grid">
+        <section class="chart-card chart-drilldown">
+          <div class="drilldown-heading">
+            <div>
+              <h4>Congregation Drill-down</h4>
+              <p id="report-scope-label">All congregations. Click a congregation bar to filter the report.</p>
+            </div>
+            <button id="report-clear-congregation" type="button" hidden>Show all congregations</button>
+          </div>
+          <div class="chart-canvas-wrap"><canvas id="chart-congregations" aria-label="Click a congregation to filter the report"></canvas></div>
+        </section>
+        <section class="chart-card">
+          <h4>Attendance by Activity</h4>
+          <p id="attendance-chart-caption">Member attendance records in the selected month and congregation.</p>
+          <div class="chart-canvas-wrap"><canvas id="chart-activity" aria-label="Attendance records by activity"></canvas></div>
+        </section>
+        <section class="chart-card">
+          <h4>Membership by Office</h4>
+          <p>Current member records grouped by role or office.</p>
+          <div class="chart-canvas-wrap"><canvas id="chart-membership" aria-label="Current members by office"></canvas></div>
+        </section>
+        <section class="chart-card">
+          <h4>Hospital Admissions and Visits</h4>
+          <p>Six-month trend through the selected report month.</p>
+          <div class="chart-canvas-wrap"><canvas id="chart-hospital" aria-label="Hospital admissions and visits by month"></canvas></div>
+        </section>
+        <section class="chart-card">
+          <h4>Monthly Tithes</h4>
+          <p>Recorded tithe totals for the six-month reporting window.</p>
+          <div class="chart-canvas-wrap"><canvas id="chart-tithes" aria-label="Tithe totals by month"></canvas></div>
+        </section>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    function getStore(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } }
+    function getMembers() { return getStore('church_members', []); }
+    function getAttendanceRecords() { return getStore('attendance_records', []); }
+    function getTitheRecords() { return getStore('tithe_records', []); }
+    function getCongregations() {
+      const stored = getStore('church_congregations', []);
+      const congregations = Array.isArray(stored) && stored.length ? stored : [
+        { id: 'cong-1', name: 'Main Church' },
+        { id: 'cong-2', name: 'Forest View' },
+        { id: 'cong-3', name: 'City Outreach' }
+      ];
+      return congregations.filter(congregation => {
+        const name = String(congregation.congregation_name || congregation.name || '')
+          .trim()
+          .toLowerCase();
+        return name !== 'overseership main' && !/^overseership main\s+\(.+\)$/.test(name);
+      });
+    }
+    function getHospitalAdmissions() {
+      const stored = getStore('hospital_admissions', null);
+      if (Array.isArray(stored)) return stored;
+      const legacyVisits = getStore('hospital_visits', []).concat(getStore('hospital-visits', []));
+      const admissions = [];
+      legacyVisits.forEach(function (visit) {
+        if (Array.isArray(visit.visits)) {
+          admissions.push(visit);
+          return;
+        }
+        const key = [visit.person_name, visit.person_surname, visit.admission_date, visit.hospital_name]
+          .map(value => String(value || '').trim().toLowerCase()).join('|');
+        let admission = admissions.find(item => item._key === key);
+        if (!admission) {
+          admission = Object.assign({}, visit, { _key: key, visits: [] });
+          admissions.push(admission);
+        }
+        admission.visits.push(visit);
+      });
+      return admissions;
+    }
+
+    const reportCharts = {};
+    const chartColors = ['#0078d4', '#107c41', '#8764b8', '#ca5010', '#008272', '#c239b3', '#498205', '#e3008c'];
+    let selectedCongregationId = '';
+
+    function monthWindow(endMonth, count) {
+      const [year, month] = endMonth.split('-').map(Number);
+      return Array.from({ length: count }, function (_, index) {
+        const date = new Date(year, month - 1 - (count - index - 1), 1);
+        return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+      });
+    }
+
+    function monthLabel(key) {
+      const [year, month] = key.split('-').map(Number);
+      return new Date(year, month - 1, 1).toLocaleDateString('en-ZA', { month: 'short', year: '2-digit' });
+    }
+
+    function localDateValue(date) {
+      return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    }
+
+    function reportingWindow(monthKeyValue) {
+      const [year, month] = monthKeyValue.split('-').map(Number);
+      function firstSunday(yearValue, monthIndex) {
+        const date = new Date(yearValue, monthIndex, 1);
+        date.setDate(1 + (7 - date.getDay()) % 7);
+        return date;
+      }
+      const start = firstSunday(year, month - 1);
+      const end = firstSunday(year, month);
+      end.setDate(end.getDate() - 1);
+      return { start: localDateValue(start), end: localDateValue(end) };
+    }
+
+    function isInReportWindow(dateValue, window) {
+      const value = String(dateValue || '').slice(0, 10);
+      return Boolean(value && (!window.start || value >= window.start) && (!window.end || value <= window.end));
+    }
+
+    function replaceChart(id, config) {
+      if (!window.Chart) return;
+      if (reportCharts[id]) reportCharts[id].destroy();
+      const canvas = document.getElementById(id);
+      reportCharts[id] = new Chart(canvas, config);
+      if (id === 'chart-congregations' && canvas.dataset.drilldownBound !== 'true') {
+        canvas.dataset.drilldownBound = 'true';
+        canvas.addEventListener('click', function (event) {
+          const chart = reportCharts['chart-congregations'];
+          const elements = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+          if (!elements.length || !chart.data.labels.length) return;
+          const congregation = getCongregations()[elements[0].index];
+          if (!congregation) return;
+          selectedCongregationId = String(congregation.id || congregation.congregation_id || '');
+          renderReporting();
+        });
+      }
+    }
+
+    function getAdmissionCongregationId(admission, members) {
+      if (admission.congregation_id) return String(admission.congregation_id);
+      const patientName = String(admission.person_name || '').trim().toLowerCase();
+      const patientSurname = String(admission.person_surname || '').trim().toLowerCase();
+      const matchingMember = members.find(member =>
+        String(member.first_name || '').trim().toLowerCase() === patientName &&
+        String(member.surname || '').trim().toLowerCase() === patientSurname
+      );
+      return matchingMember && matchingMember.congregation_id ? String(matchingMember.congregation_id) : '';
+    }
+
+    function renderCharts(members, attendance, admissions, titheRecords, month, selectedWindow) {
+      const notice = document.getElementById('chart-notice');
+      if (!window.Chart) {
+        notice.textContent = 'Charts could not load. Check your internet connection and refresh this report.';
+        notice.style.display = 'block';
+        return;
+      }
+      notice.style.display = 'none';
+
+      const congregations = getCongregations();
+      const selectedCongregation = congregations.find(congregation => String(congregation.id || congregation.congregation_id) === selectedCongregationId);
+      const getCongregationId = item => item.congregation_id ? String(item.congregation_id) : '';
+      const inSelectedCongregation = item => !selectedCongregationId || getCongregationId(item) === selectedCongregationId;
+      const scopedMembers = members.filter(inSelectedCongregation);
+      const scopedAttendance = attendance.filter(inSelectedCongregation);
+      const scopedTithes = titheRecords.filter(inSelectedCongregation);
+      const scopedAdmissions = admissions.filter(admission => !selectedCongregationId || getAdmissionCongregationId(admission, members) === selectedCongregationId);
+      const scopeName = selectedCongregation
+        ? selectedCongregation.name || selectedCongregation.congregation_name || selectedCongregationId
+        : 'All congregations';
+      document.getElementById('report-scope-label').textContent = selectedCongregation
+        ? 'Viewing ' + scopeName + '. Click another congregation to switch or clear the selection.'
+        : 'All congregations. Click a congregation bar to filter the report.';
+      document.getElementById('report-clear-congregation').hidden = !selectedCongregationId;
+      document.getElementById('attendance-chart-caption').textContent =
+        'Member attendance records in ' + scopeName + ' from ' + selectedWindow.start + ' through ' + selectedWindow.end + '.';
+
+      const congregationCounts = congregations.map(congregation => {
+        const id = String(congregation.id || congregation.congregation_id || '');
+        return {
+          id,
+          name: congregation.name || congregation.congregation_name || id,
+          count: members.filter(member => String(member.congregation_id || '') === id).length
+        };
+      }).filter(congregation => congregation.id);
+      replaceChart('chart-congregations', {
+        type: 'bar',
+        data: {
+          labels: congregationCounts.length ? congregationCounts.map(item => item.name) : ['No congregations'],
+          datasets: [{
+            label: 'Members',
+            data: congregationCounts.length ? congregationCounts.map(item => item.count) : [0],
+            backgroundColor: congregationCounts.map(item => item.id === selectedCongregationId ? '#107c41' : '#0078d4'),
+            borderRadius: 5,
+            maxBarThickness: 38
+          }]
+        },
+        options: {
+          indexAxis: 'y', maintainAspectRatio: false, responsive: true,
+          onHover: (event, elements) => {
+            event.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+          },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => context.raw + ' members — click to drill down' } } },
+          scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#edf0f2' } }, y: { grid: { display: false } } }
+        }
+      });
+
+      const monthAttendance = scopedAttendance.filter(record => isInReportWindow(record.date || record.activity_date, selectedWindow));
+      const activityTotals = new Map();
+      monthAttendance.forEach(record => {
+        const name = record.activity || record.activity_name || 'Unspecified activity';
+        activityTotals.set(name, (activityTotals.get(name) || 0) + 1);
+      });
+      const activityEntries = Array.from(activityTotals.entries()).sort((a, b) => b[1] - a[1]);
+      replaceChart('chart-activity', {
+        type: 'bar',
+        data: {
+          labels: activityEntries.length ? activityEntries.map(entry => entry[0]) : ['No attendance recorded'],
+          datasets: [{ label: 'Members present', data: activityEntries.length ? activityEntries.map(entry => entry[1]) : [0], backgroundColor: '#0078d4', borderRadius: 5, maxBarThickness: 30 }]
+        },
+        options: {
+          indexAxis: 'y', maintainAspectRatio: false, responsive: true,
+          plugins: { legend: { display: false }, tooltip: { displayColors: false } },
+          scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#edf0f2' } }, y: { grid: { display: false } } }
+        }
+      });
+
+      const roles = new Map();
+      scopedMembers.forEach(member => {
+        const role = String(member.role_group || 'Unassigned');
+        roles.set(role, (roles.get(role) || 0) + 1);
+      });
+      const roleEntries = Array.from(roles.entries()).sort((a, b) => b[1] - a[1]);
+      replaceChart('chart-membership', {
+        type: 'doughnut',
+        data: {
+          labels: roleEntries.length ? roleEntries.map(entry => entry[0]) : ['No members'],
+          datasets: [{ data: roleEntries.length ? roleEntries.map(entry => entry[1]) : [1], backgroundColor: roleEntries.length ? roleEntries.map((_, index) => chartColors[index % chartColors.length]) : ['#e1e1e1'], borderColor: '#fff', borderWidth: 3, hoverOffset: 6 }]
+        },
+        options: {
+          maintainAspectRatio: false, responsive: true, cutout: '66%',
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14 } } }
+        }
+      });
+
+      const months = monthWindow(month, 6);
+      const hospitalVisits = scopedAdmissions.flatMap(admission => Array.isArray(admission.visits) ? admission.visits : []);
+      replaceChart('chart-hospital', {
+        type: 'line',
+        data: {
+          labels: months.map(monthLabel),
+          datasets: [
+            { label: 'Admissions', data: months.map(key => scopedAdmissions.filter(admission => isInReportWindow(admission.admission_date, reportingWindow(key))).length), borderColor: '#0078d4', backgroundColor: 'rgba(0,120,212,.12)', fill: true, tension: .3, pointRadius: 3 },
+            { label: 'Visits', data: months.map(key => hospitalVisits.filter(visit => isInReportWindow(visit.visit_date, reportingWindow(key))).length), borderColor: '#107c41', backgroundColor: 'rgba(16,124,65,.08)', fill: true, tension: .3, pointRadius: 3 }
+          ]
+        },
+        options: {
+          maintainAspectRatio: false, responsive: true,
+          plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 16 } } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#edf0f2' } }, x: { grid: { display: false } } }
+        }
+      });
+
+      replaceChart('chart-tithes', {
+        type: 'bar',
+        data: {
+          labels: months.map(monthLabel),
+          datasets: [{ label: 'Tithes (R)', data: months.map(key => scopedTithes.reduce((sum, record) => sum + (isInReportWindow(record.date, reportingWindow(key)) ? Number(record.amount || 0) : 0), 0)), backgroundColor: '#8764b8', borderRadius: 5, maxBarThickness: 44 }]
+        },
+        options: {
+          maintainAspectRatio: false, responsive: true,
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => 'R ' + Number(context.raw).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) } } },
+          scales: { y: { beginAtZero: true, grid: { color: '#edf0f2' }, ticks: { callback: value => 'R ' + Number(value).toLocaleString('en-ZA') } }, x: { grid: { display: false } } }
+        }
+      });
+    }
+
+    function totalSouls(members) {
+      return members.reduce((total, member) => total + ((member.is_family && Number(member.family_souls_count)) ? Number(member.family_souls_count) : 1), 0);
+    }
+
+    function renderReporting() {
+      const allMembers = getMembers().filter(member => member.is_active !== false);
+      const congregations = getCongregations();
+      const members = selectedCongregationId
+        ? allMembers.filter(member => String(member.congregation_id || '') === selectedCongregationId)
+        : allMembers;
+      const attendance = getAttendanceRecords();
+      const scopedAttendance = selectedCongregationId ? attendance.filter(record => String(record.congregation_id || '') === selectedCongregationId) : attendance;
+      const month = document.getElementById('report-month').value || new Date().toISOString().slice(0, 7);
+      const selectedWindow = {
+        start: document.getElementById('report-start-date').value,
+        end: document.getElementById('report-end-date').value
+      };
+      if (selectedWindow.start && selectedWindow.end && selectedWindow.start > selectedWindow.end) return;
+      const isInSelectedWindow = date => isInReportWindow(date, selectedWindow);
+      const visitorCount = scopedAttendance.filter(record => isInSelectedWindow(record.date || record.activity_date)).length;
+      const families = members.filter(m => m.is_family).length;
+      const total = totalSouls(members);
+      const youthOfficerIds = new Set(members
+        .filter(member => /youth/i.test([member.role_group, member.priest_type, member.elder_type].filter(Boolean).join(' ')))
+        .map(member => String(member.member_id)));
+      const youth = members.filter(member =>
+        member.role_group === 'Youth' || youthOfficerIds.has(String(member.assigned_priest_id || ''))
+      ).length;
+      const children = members.filter(member => member.family_main_id && member.role_group === 'Child').length;
+      const titheRecords = getTitheRecords();
+      const archivedAdmissions = getStore('hospital_archive', getStore('hospital-archive', []));
+      const allActiveAdmissions = getHospitalAdmissions();
+      const admissions = allActiveAdmissions.concat(Array.isArray(archivedAdmissions) ? archivedAdmissions : []);
+      const scopedAdmissions = selectedCongregationId ? admissions.filter(admission => getAdmissionCongregationId(admission, allMembers) === selectedCongregationId) : admissions;
+      const activeAdmissions = selectedCongregationId ? allActiveAdmissions.filter(admission => getAdmissionCongregationId(admission, allMembers) === selectedCongregationId) : allActiveAdmissions;
+      const monthAdmissions = scopedAdmissions.filter(admission => isInSelectedWindow(admission.admission_date));
+      const monthVisits = scopedAdmissions.reduce(function (totalVisits, admission) {
+        const visits = Array.isArray(admission.visits) ? admission.visits : [];
+        return totalVisits + visits.filter(visit => isInSelectedWindow(visit.visit_date)).length;
+      }, 0);
+      const admittedAndVisited = scopedAdmissions.filter(function (admission) {
+        const visits = Array.isArray(admission.visits) ? admission.visits : [];
+        return isInSelectedWindow(admission.admission_date) && visits.some(visit => isInSelectedWindow(visit.visit_date));
+      }).length;
+
+      document.getElementById('report-souls').textContent = total;
+      document.getElementById('report-families').textContent = families;
+      document.getElementById('report-youth').textContent = youth;
+      document.getElementById('report-children').textContent = children;
+      document.getElementById('report-visitors').textContent = visitorCount;
+      document.getElementById('report-hospital-current').textContent = activeAdmissions.length;
+      document.getElementById('report-hospital-admitted-visited').textContent = admittedAndVisited;
+      document.getElementById('report-hospital-admissions').textContent = monthAdmissions.length;
+      document.getElementById('report-hospital-visits').textContent = monthVisits;
+
+      document.getElementById('report-period-label').textContent =
+        'Reporting period: ' + (selectedWindow.start || 'all dates') + ' through ' + (selectedWindow.end || 'today') + " (first Sunday to the Saturday before the next month's first Sunday).";
+      renderCharts(allMembers, attendance, admissions, titheRecords, month, selectedWindow);
+    }
+
+    document.getElementById('report-month')?.addEventListener('change', function () {
+      const month = this.value;
+      if (!month) return;
+      const window = reportingWindow(month);
+      document.getElementById('report-start-date').value = window.start;
+      document.getElementById('report-end-date').value = window.end;
+      renderReporting();
+    });
+
+    document.getElementById('report-clear-congregation').addEventListener('click', function () {
+      selectedCongregationId = '';
+      renderReporting();
+    });
+
+    const now = new Date();
+    document.getElementById('report-month').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    document.getElementById('report-month').dispatchEvent(new Event('change'));
+    renderReporting();
+    window.addEventListener('storage', renderReporting);
+  </script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tithes Module</title>
+  <style>
+    :root { --bg: #f3f4f6; --card: #ffffff; --border: #e1e1e1; --primary: #0078d4; --muted: #605e5c; --success: #107c41; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #252423; }
+    .wrap { padding: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    h2, h3 { margin-top: 0; color: var(--primary); }
+    p { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    input, select, button { font: inherit; }
+    input, select { width: 100%; padding: 9px 10px; border: 1px solid #8a8886; border-radius: 4px; }
+    button { background: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .success { background: var(--success); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { background: #faf9f8; color: var(--muted); text-transform: uppercase; font-size: 0.72rem; }
+    .status { margin-top: 8px; color: var(--muted); font-size:0.85rem; }
+  </style>
+</head>
+<body>
+  <script>window.location.replace(new URL('index.html?view=view-tithes', window.location.href).href);</script>
+  <noscript><p>This module requires JavaScript. <a href="index.html?view=view-tithes">Open Tithes in the secure dashboard</a>.</p></noscript>
+  <div class="wrap">
+    <div class="card">
+      <h2>Record Tithes</h2>
+      <form id="tithes-form" class="grid">
+        <div class="field"><label>Select Congregation</label><select id="tithe-congregation"></select></div>
+        <div class="field"><label>Date</label><input id="tithe-date" type="date" /></div>
+        <div class="field"><label>Allocation Type</label><select id="tithe-allocation-type"><option value="Allocated to Priest">Allocated to Priest</option><option value="Officer's Tithes">Officer's Tithes</option><option value="Unallocated Tithe">Unallocated Tithe</option></select></div>
+        <div class="field"><label>Allocated Officer / Priest</label><select id="tithe-priest"><option value="">-- None --</option></select></div>
+        <div class="field"><label>Total Amount (ZAR)</label><input id="tithe-amount" type="number" min="0" step="0.01" /></div>
+        <button type="submit" class="success" style="grid-column: 1 / -1;">Record Tithe</button>
+      </form>
+      <div id="tithe-status" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h3>All Captured Tithes</h3>
+      <table>
+        <thead><tr><th>Date</th><th>Congregation</th><th>Category / Allocation</th><th>Officer / Priest</th><th>Amount (ZAR)</th></tr></thead>
+        <tbody id="tithe-table-body"><tr><td colspan="5" style="text-align:center;">No tithes records yet.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function getStore(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } }
+    function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function getCongregations() { const stored = getStore('church_congregations', null); return stored && stored.length ? stored : [{ id: 'cong-1', name: 'Main Church' }, { id: 'cong-2', name: 'Forest View' }, { id: 'cong-3', name: 'City Outreach' }]; }
+    function getMembers() { return getStore('church_members', []); }
+
+    function populateTitheForm() {
+      const congregationSelect = document.getElementById('tithe-congregation');
+      if (congregationSelect) {
+        congregationSelect.innerHTML = '<option value="">-- Select Congregation --</option>' + getCongregations().map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
+      }
+
+      const priestSelect = document.getElementById('tithe-priest');
+      if (priestSelect) {
+        const priests = getMembers().filter(member => member.role_group.toLowerCase().includes('priest'));
+        priestSelect.innerHTML = '<option value="">-- None --</option>' + priests.map(item => '<option value="' + item.id + '">' + item.first_name + ' ' + item.surname + '</option>').join('');
+      }
+    }
+
+    function renderTithesTable() {
+      const tbody = document.getElementById('tithe-table-body');
+      if (!tbody) return;
+      const records = getStore('tithe_records', []);
+      if (!records.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No tithes records yet.</td></tr>';
+        return;
+      }
+      const congregationMap = Object.fromEntries(getCongregations().map(item => [item.id, item.name]));
+      tbody.innerHTML = records.map(record => {
+        const congregationName = congregationMap[record.congregation_id] || '-';
+        const member = getMembers().find(item => item.id === record.officer_id);
+        const officer = member ? member.first_name + ' ' + member.surname : record.officer_id || 'General';
+        return '<tr><td>' + (record.date || '-') + '</td><td>' + congregationName + '</td><td>' + (record.category || '-') + '</td><td>' + officer + '</td><td>' + Number(record.amount || 0).toFixed(2) + '</td></tr>';
+      }).join('');
+    }
+
+    document.getElementById('tithes-form')?.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const amount = Number(document.getElementById('tithe-amount').value || 0);
+      if (!document.getElementById('tithe-date').value || !document.getElementById('tithe-congregation').value || amount <= 0) {
+        document.getElementById('tithe-status').textContent = 'Please complete the date, congregation and amount before saving.';
+        return;
+      }
+      const records = getStore('tithe_records', []);
+      records.push({
+        date: document.getElementById('tithe-date').value,
+        congregation_id: document.getElementById('tithe-congregation').value,
+        category: document.getElementById('tithe-allocation-type').value,
+        officer_id: document.getElementById('tithe-priest').value,
+        amount: amount
+      });
+      setStore('tithe_records', records);
+      document.getElementById('tithes-form').reset();
+      document.getElementById('tithe-status').textContent = 'Tithe saved successfully.';
+      renderTithesTable();
+    });
+
+    populateTitheForm();
+    renderTithesTable();
+  </script>
+</body>
+</html>

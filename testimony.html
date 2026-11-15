@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testimony Module</title>
+  <style>
+    :root { --bg: #f3f4f6; --card: #ffffff; --border: #e1e1e1; --primary: #0078d4; --muted: #605e5c; --success: #107c41; --danger: #a80000; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #252423; }
+    .wrap { padding: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    h2, h3 { margin-top: 0; color: var(--primary); }
+    p { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    input, select, textarea, button { font: inherit; }
+    input, select, textarea { width: 100%; padding: 9px 10px; border: 1px solid #8a8886; border-radius: 4px; }
+    button { background: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .success { background: var(--success); }
+    .secondary { background: #605e5c; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { background: #faf9f8; color: var(--muted); text-transform: uppercase; font-size: 0.72rem; }
+    .status { margin-top: 8px; color: var(--muted); font-size:0.85rem; }
+    #testimony-member-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+    .testimony-member-item { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; margin: 0; border: 1px solid var(--border); border-radius: 4px; background: #fafafa; }
+    .testimony-member-item input[type="checkbox"] { flex: 0 0 auto; width: auto; }
+    #testimony-member-list > p { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+  <script>window.location.replace(new URL('index.html?view=view-testimony', window.location.href).href);</script>
+  <noscript><p>This module requires JavaScript. <a href="index.html?view=view-testimony">Open Testimony in the secure dashboard</a>.</p></noscript>
+  <div class="wrap">
+    <div class="card">
+      <h2>Testimony Capture & Tracking</h2>
+      <form id="testimony-form" class="grid">
+        <div class="field"><label>Officer Responsible</label><select id="testimony-officer"><option value="">-- Select Priest or Underdeacon --</option></select></div>
+        <div class="field"><label>Testimony Category</label><select id="testimony-category"><option>House Testimony</option><option>Outdoor Testimony</option></select></div>
+        <div class="field"><label>First Name</label><input id="testimony-first-name" type="text" /></div>
+        <div class="field"><label>Initials</label><input id="testimony-initials" type="text" /></div>
+        <div class="field"><label>Surname</label><input id="testimony-surname" type="text" /></div>
+        <div class="field"><label>Email</label><input id="testimony-email" type="email" /></div>
+        <div class="field"><label>Contact Number</label><input id="testimony-contact" type="text" /></div>
+        <div class="field"><label>Number of Souls</label><input id="testimony-souls" type="number" value="1" /></div>
+        <div class="field" style="grid-column: 1 / -1;"><label>Address / Testimony House</label><input id="testimony-address" type="text" /></div>
+        <div class="field" style="grid-column: 1 / -1;"><label>Comments</label><textarea id="testimony-comments" rows="3"></textarea></div>
+        <button type="submit" style="grid-column: 1 / -1;" class="success">Save Testimony Entry</button>
+      </form>
+      <div id="testimony-status" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h3>Testimony Activity Attendance</h3>
+      <form id="testimony-attendance-form" class="grid">
+        <div class="field"><label>Congregation</label><select id="testimony-congregation"></select></div>
+        <div class="field"><label>Allocated Officer</label><select id="testimony-officer-filter"><option value="">-- All Officers --</option></select></div>
+        <div class="field"><label>Activity</label><select id="testimony-activity"><option>Monday Testimony</option><option>Thursday Testimony</option></select></div>
+        <div class="field"><label>Date</label><input id="testimony-date" type="date" /></div>
+        <div style="grid-column: 1 / -1;">
+          <p style="margin: 0 0 8px;">Members Allocated to Congregation</p>
+          <div id="testimony-member-list"></div>
+        </div>
+        <button type="submit" class="success" style="grid-column: 1 / -1;">Save Testimony Attendance</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>Captured Testimony Houses</h3>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Officer</th><th>Type</th><th>House Name</th><th>Contact / Email</th><th>Address</th><th>Souls</th><th>Comments</th></tr>
+        </thead>
+        <tbody id="testimony-table-body"><tr><td colspan="8" style="text-align:center;">No testimony records yet.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function getStore(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } }
+    function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function getMembers() { return getStore('church_members', []); }
+    function getCongregations() { const stored = getStore('church_congregations', null); return stored && stored.length ? stored : [{ id: 'cong-1', name: 'Main Church' }, { id: 'cong-2', name: 'Forest View' }, { id: 'cong-3', name: 'City Outreach' }]; }
+
+    function buildOfficerOptions(selectId, filter = '') {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      const members = getMembers().filter(member => member.role_group.toLowerCase().includes('priest') || member.role_group.toLowerCase().includes('underdeacon'));
+      select.innerHTML = '<option value="">-- All Officers --</option>' + members.map(member => '<option value="' + member.id + '">' + member.first_name + ' ' + member.surname + '</option>').join('');
+      if (filter) select.value = filter;
+    }
+
+    function populateTestimonyDropdowns() {
+      const cgSelect = document.getElementById('testimony-congregation');
+      if (cgSelect) {
+        cgSelect.innerHTML = '<option value="">-- Select Congregation --</option>' + getCongregations().map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
+      }
+      buildOfficerOptions('testimony-officer');
+      buildOfficerOptions('testimony-officer-filter');
+      renderTestimonyMembers();
+    }
+
+    function renderTestimonyMembers() {
+      const congregationId = document.getElementById('testimony-congregation').value;
+      const officerId = document.getElementById('testimony-officer-filter').value;
+      const list = document.getElementById('testimony-member-list');
+      if (!list) return;
+      if (!congregationId) {
+        list.innerHTML = '<p style="margin:0; color:var(--muted);">Select a congregation to load members.</p>';
+        return;
+      }
+      let members = getMembers().filter(member => String(member.congregation_id) === String(congregationId));
+      if (officerId) members = members.filter(item => String(item.assigned_priest_id) === String(officerId));
+      if (!members.length) {
+        list.innerHTML = '<p style="margin:0; color:var(--muted);">No members found for the selected filter.</p>';
+        return;
+      }
+      list.innerHTML = members.map(member => '<label class="testimony-member-item"><input type="checkbox" class="testimony-member" value="' + member.id + '" /> ' + member.first_name + ' ' + member.surname + ' (' + member.role_group + ')</label>').join('');
+    }
+
+    function renderTestimonyRecords() {
+      const tbody = document.getElementById('testimony-table-body');
+      if (!tbody) return;
+      const records = getStore('testimony_records', []);
+      if (!records.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No testimony records yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = records.map(record => '<tr><td>' + (record.date || '-') + '</td><td>' + (record.officer_name || '-') + '</td><td>' + (record.category || '-') + '</td><td>' + (record.house_name || '-') + '</td><td>' + ((record.contact || '') + '<br>' + (record.email || '')) + '</td><td>' + (record.address || '-') + '</td><td>' + (record.souls || 0) + '</td><td>' + (record.comments || '-') + '</td></tr>').join('');
+    }
+
+    document.getElementById('testimony-congregation')?.addEventListener('change', renderTestimonyMembers);
+    document.getElementById('testimony-officer-filter')?.addEventListener('change', renderTestimonyMembers);
+
+    document.getElementById('testimony-form')?.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const records = getStore('testimony_records', []);
+      const officer = document.getElementById('testimony-officer').value;
+      const officerName = officer ? (getMembers().find(member => member.id === officer) || {}).first_name + ' ' + ((getMembers().find(member => member.id === officer) || {}).surname || '') : 'Unassigned';
+      records.push({
+        date: new Date().toISOString().slice(0, 10),
+        officer_id: officer,
+        officer_name: officerName,
+        category: document.getElementById('testimony-category').value,
+        house_name: document.getElementById('testimony-first-name').value + ' ' + document.getElementById('testimony-surname').value,
+        email: document.getElementById('testimony-email').value,
+        contact: document.getElementById('testimony-contact').value,
+        address: document.getElementById('testimony-address').value,
+        souls: Number(document.getElementById('testimony-souls').value || 1),
+        comments: document.getElementById('testimony-comments').value,
+        first_name: document.getElementById('testimony-first-name').value,
+        surname: document.getElementById('testimony-surname').value
+      });
+      setStore('testimony_records', records);
+      document.getElementById('testimony-form').reset();
+      document.getElementById('testimony-status').textContent = 'Testimony entry saved successfully.';
+      renderTestimonyRecords();
+    });
+
+    document.getElementById('testimony-attendance-form')?.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const selected = Array.from(document.querySelectorAll('.testimony-member:checked')).map(item => item.value);
+      const records = getStore('testimony_attendance', []);
+      records.push({
+        date: document.getElementById('testimony-date').value || new Date().toISOString().slice(0, 10),
+        activity: document.getElementById('testimony-activity').value,
+        congregation_id: document.getElementById('testimony-congregation').value,
+        members: selected
+      });
+      setStore('testimony_attendance', records);
+      document.getElementById('testimony-status').textContent = 'Saved testimony attendance for ' + selected.length + ' member(s).';
+      document.getElementById('testimony-attendance-form').reset();
+      renderTestimonyMembers();
+    });
+
+    populateTestimonyDropdowns();
+    renderTestimonyRecords();
+  </script>
+</body>
+</html>

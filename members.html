@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Members Module</title>
+  <style>
+    :root {
+      --bg: #f3f4f6; --card: #ffffff; --border: #e1e1e1; --primary: #0078d4; --muted: #605e5c; --success: #107c41; --danger: #a80000;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #252423; }
+    .wrap { padding: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    h2, h3 { margin-top: 0; color: var(--primary); }
+    p { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    input, select, textarea, button { font: inherit; }
+    input, select, textarea { width: 100%; padding: 9px 10px; border: 1px solid #8a8886; border-radius: 4px; background: #fff; }
+    button { background: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .secondary { background: #605e5c; }
+    .success { background: var(--success); }
+    .danger { background: var(--danger); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { background: #faf9f8; color: var(--muted); text-transform: uppercase; font-size: 0.72rem; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .kpi { background: var(--card); border: 1px solid var(--border); border-top: 4px solid var(--primary); border-radius: 8px; padding: 16px; }
+    .kpi h4 { margin: 0 0 8px; font-size: 0.72rem; text-transform: uppercase; color: var(--muted); }
+    .kpi strong { font-size: 2rem; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+    .status-badge { display:inline-block; padding:4px 8px; border-radius:999px; font-size:0.72rem; font-weight:700; }
+    .status-active { background:#e6f4ea; color:#107c41; }
+    .status-semi { background:#fff4ce; color:#8a6d00; }
+    .status-inactive { background:#fde7e9; color:#a80000; }
+  </style>
+</head>
+<body>
+  <script>window.location.replace(new URL('index.html?view=view-member-capture', window.location.href).href);</script>
+  <noscript><p>This module requires JavaScript. <a href="index.html?view=view-member-capture">Open Members in the secure dashboard</a>.</p></noscript>
+  <div class="wrap">
+    <div class="kpis">
+      <div class="kpi"><h4>Total Souls / Members</h4><strong id="kpi-souls">0</strong></div>
+      <div class="kpi"><h4>Active Congregations</h4><strong id="kpi-congregations">0</strong></div>
+    </div>
+
+    <div class="card">
+      <h2>Add New Member</h2>
+      <form id="member-form" class="grid">
+        <div class="field"><label>Member / Officer Role</label><select id="new-role-group" required></select></div>
+        <div class="field"><label>First Name</label><input id="new-first-name" type="text" required /></div>
+        <div class="field"><label>Initials</label><input id="new-initials" type="text" /></div>
+        <div class="field"><label>Surname</label><input id="new-surname" type="text" required /></div>
+        <div class="field"><label>ID / Passport Number</label><input id="new-id-number" type="text" required oninput="fillMemberDob()" /></div>
+        <div class="field"><label>Email Address</label><input id="new-email" type="email" /></div>
+        <div class="field"><label>Date of Birth</label><input id="new-dob" type="date" /></div>
+        <div class="field"><label>Baptism / Taken Up Date</label><input id="new-baptism-date" type="date" /></div>
+        <div class="field"><label>Sealing Date</label><input id="new-sealing-date" type="date" /></div>
+        <div class="field"><label>Has a Will?</label><select id="new-has-will"><option value="false">No</option><option value="true">Yes</option></select></div>
+        <div class="field"><label>Contact Number</label><input id="new-contact" type="text" /></div>
+        <div class="field"><label>Address</label><input id="new-address" type="text" /></div>
+        <div class="field"><label>Congregation</label><select id="new-congregation" required></select></div>
+        <div class="field"><label>Family</label><select id="new-is-family" onchange="toggleMemberFamilyFields()"><option value="single_member">Single Member</option><option value="family_unit">Family</option><option value="single_sister_family">Single Sister Family</option><option value="single_brother_family">Single Brother Family</option><option value="50_50_sister_family">50/50 Sister Family</option><option value="50_50_brother_family">50/50 Brother Family</option></select></div>
+        <div class="field" id="family-children-count-field" style="display:none;"><label>How many children are in the family?</label><input id="new-family-children-count" type="number" value="0" min="0" step="1" oninput="renderMemberFamilyChildren()" /></div>
+        <div class="field" id="family-children-list-field" style="display:none;grid-column:1/-1;"><div class="card"><h3>Children's Details</h3><p>Each child is linked to this family and counts as one soul, even if no ID number is available.</p><div id="new-family-children-list" class="grid"></div></div></div>
+        <div class="field" id="sister-id-field" style="display:none;"><label>Sister's ID Number</label><input id="new-sister-id-number" type="text" minlength="6" maxlength="13" oninput="fillSisterDob()" /></div>
+        <div class="field" id="sister-dob-field" style="display:none;"><label>Sister's Date of Birth</label><input id="new-sister-dob" type="date" readonly /></div>
+        <div class="field"><label>Responsible Officer (Priest)</label><select id="new-assigned-priest"><option value="">-- None --</option></select></div>
+        <div class="field"><label>Responsible Officer (Elder)</label><select id="new-assigned-elder"><option value="">-- None --</option></select></div>
+        <button type="submit" class="success" style="grid-column: 1 / -1;">Save Member</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>CSV Data & Directory Management</h3>
+      <div class="toolbar">
+        <input id="csv-file-input" type="file" accept=".csv" />
+        <button type="button" class="secondary" id="upload-csv-btn">Upload CSV</button>
+        <button type="button" class="success" id="export-csv-btn">Export Directory (CSV)</button>
+        <button type="button" class="danger" id="clear-db-btn">Clear Database</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Report Filters & Slicers</h3>
+      <div class="grid">
+        <div class="field"><label>Search</label><input id="search-query" type="text" placeholder="Name / surname" /></div>
+        <div class="field"><label>Filter by Role</label><select id="filter-role"></select></div>
+        <div class="field"><label>Filter by Congregation</label><select id="filter-congregation"></select></div>
+        <div class="field"><label>Filter by Priest</label><select id="filter-priest"></select></div>
+      </div>
+      <p id="search-result-count" style="margin-top:14px; margin-bottom:0; color:var(--muted);">Showing all records.</p>
+    </div>
+
+    <div class="card">
+      <h3>Member Directory</h3>
+      <table>
+        <thead>
+          <tr><th>Role / Office</th><th>Name</th><th>Contact / Email</th><th>Congregation</th><th>Responsible Officer</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="member-table-body">
+          <tr><td colspan="7" style="text-align:center;">Loading records...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const ROLES = ['Youth', 'Brother', 'Sister', 'Priest', 'Priest Sister', 'Elder', 'Elder Sister', 'Overseer', 'Overseer Sister', 'Evangelist', 'Prophet'];
+    const defaultCongregations = [
+      { id: 'cong-1', name: 'Main Church' },
+      { id: 'cong-2', name: 'Forest View' },
+      { id: 'cong-3', name: 'City Outreach' }
+    ];
+    const defaultMembers = [
+      { id: 'm-1', first_name: 'Michael', initials: 'M', surname: 'Brown', id_number: '9001011234089', email: 'michael@example.org', date_of_birth: '1990-01-01', contact_number: '0712345678', address: '1 Main Road', congregation_id: 'cong-1', role_group: 'Priest', is_family: false, family_souls_count: 1, has_will: true, assigned_priest_id: '', assigned_elder_id: '', assigned_overseer_id: '', is_active: true },
+      { id: 'm-2', first_name: 'Grace', initials: 'G', surname: 'Brown', id_number: '9301011234081', email: 'grace@example.org', contact_number: '0798765432', address: '1 Main Road', congregation_id: 'cong-1', role_group: 'Sister', is_family: false, family_souls_count: 1, has_will: false, assigned_priest_id: 'm-1', assigned_elder_id: '', assigned_overseer_id: '', is_active: true },
+      { id: 'm-3', first_name: 'David', initials: 'D', surname: 'Mokoena', id_number: '9505125234089', email: 'david@example.org', contact_number: '0845566777', address: '14 River Rd', congregation_id: 'cong-2', role_group: 'Elder', is_family: true, family_souls_count: 4, has_will: true, assigned_priest_id: '', assigned_elder_id: '', assigned_overseer_id: '', is_active: true },
+      { id: 'm-4', first_name: 'Lebo', initials: 'L', surname: 'Mokoena', id_number: '9803121234084', email: 'lebo@example.org', contact_number: '0811122233', address: '14 River Rd', congregation_id: 'cong-2', role_group: 'Sister', is_family: false, family_souls_count: 1, has_will: true, assigned_priest_id: 'm-3', assigned_elder_id: '', assigned_overseer_id: '', is_active: true },
+      { id: 'm-5', first_name: 'Peter', initials: 'P', surname: 'Ndlovu', id_number: '8902101234087', email: 'peter@example.org', contact_number: '0698877665', address: '77 Hill Road', congregation_id: 'cong-3', role_group: 'Brother', is_family: false, family_souls_count: 1, has_will: false, assigned_priest_id: '', assigned_elder_id: '', assigned_overseer_id: '', is_active: true }
+    ];
+
+    function getStore(key, fallback) {
+      const raw = localStorage.getItem(key);
+      try {
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function setStore(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function ensureSeedData() {
+      const congregations = getStore('church_congregations', null);
+      if (!congregations || !congregations.length) setStore('church_congregations', defaultCongregations);
+
+      const members = getStore('church_members', null);
+      if (!members || !members.length) setStore('church_members', defaultMembers);
+    }
+
+    function getMembers() {
+      ensureSeedData();
+      return getStore('church_members', []);
+    }
+
+    function getCongregations() {
+      ensureSeedData();
+      return getStore('church_congregations', []);
+    }
+
+    function getTotalSouls(members) {
+      return members.reduce((total, member) => {
+        if (!member.is_family) return total + 1;
+        if (member.family_type) return total + (member.family_type === 'family_unit' ? 2 : 1);
+        return total + (Number(member.family_souls_count) > 0 ? Number(member.family_souls_count) : 1);
+      }, 0);
+    }
+
+    function getMemberIdDate(idNumber) {
+      const digits = String(idNumber || '').replace(/\D/g, '');
+      if (digits.length < 6) return '';
+      const yy = Number(digits.slice(0, 2));
+      const month = Number(digits.slice(2, 4));
+      const day = Number(digits.slice(4, 6));
+      const nowYear = new Date().getFullYear();
+      const year = Number(`${yy > nowYear % 100 ? '19' : '20'}${digits.slice(0, 2)}`);
+      const candidate = new Date(Date.UTC(year, month - 1, day));
+      if (candidate.getUTCFullYear() !== year || candidate.getUTCMonth() !== month - 1 || candidate.getUTCDate() !== day) return '';
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function fillMemberDob() {
+      document.getElementById('new-dob').value = getMemberIdDate(document.getElementById('new-id-number').value);
+    }
+
+    function fillSisterDob() {
+      document.getElementById('new-sister-dob').value = getMemberIdDate(document.getElementById('new-sister-id-number').value);
+    }
+
+    function getFamilyChildrenFromForm() {
+      return Array.from(document.querySelectorAll('#new-family-children-list .family-child-row')).map(row => ({
+        id: row.querySelector('.family-child-id').value,
+        first_name: row.querySelector('.family-child-first-name').value.trim(),
+        second_name: row.querySelector('.family-child-second-name').value.trim(),
+        surname: row.querySelector('.family-child-surname').value.trim(),
+        id_number: row.querySelector('.family-child-id-number').value.trim(),
+        date_of_birth: row.querySelector('.family-child-dob').value,
+        baptism_or_taken_up_date: row.querySelector('.family-child-baptism-date').value,
+        sealing_date: row.querySelector('.family-child-sealing-date').value
+      }));
+    }
+
+    function renderMemberFamilyChildren(children) {
+      const list = document.getElementById('new-family-children-list');
+      const requestedCount = Number.parseInt(document.getElementById('new-family-children-count').value, 10);
+      const count = Number.isInteger(requestedCount) && requestedCount > 0 ? requestedCount : 0;
+      const current = children || getFamilyChildrenFromForm();
+      list.innerHTML = Array.from({ length: count }, (_, index) => {
+        const child = current[index] || {};
+        return `<fieldset class="family-child-row" style="grid-column:1/-1;"><legend>Child ${index + 1}</legend>
+          <input type="hidden" class="family-child-id" value="${escapeMemberHtml(child.id || '')}">
+          <div class="grid">
+            <div class="field"><label>First Name</label><input class="family-child-first-name" required value="${escapeMemberHtml(child.first_name || '')}"></div>
+            <div class="field"><label>Second Name</label><input class="family-child-second-name" value="${escapeMemberHtml(child.second_name || '')}"></div>
+            <div class="field"><label>Surname</label><input class="family-child-surname" required value="${escapeMemberHtml(child.surname || '')}"></div>
+            <div class="field"><label>ID Number (optional)</label><input class="family-child-id-number" minlength="6" maxlength="13" oninput="fillFamilyChildDob(this)" value="${escapeMemberHtml(child.id_number || '')}"></div>
+            <div class="field"><label>Date of Birth</label><input class="family-child-dob" type="date" readonly value="${escapeMemberHtml(child.date_of_birth || getMemberIdDate(child.id_number))}"></div>
+            <div class="field"><label>Baptism Date</label><input class="family-child-baptism-date" type="date" value="${escapeMemberHtml(child.baptism_or_taken_up_date || '')}"></div>
+            <div class="field"><label>Sealing Date</label><input class="family-child-sealing-date" type="date" value="${escapeMemberHtml(child.sealing_date || '')}"></div>
+          </div></fieldset>`;
+      }).join('');
+    }
+
+    function fillFamilyChildDob(input) {
+      input.closest('.family-child-row').querySelector('.family-child-dob').value = getMemberIdDate(input.value);
+    }
+
+    function escapeMemberHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+    }
+
+    function toggleMemberFamilyFields(children) {
+      const familyType = document.getElementById('new-is-family').value;
+      const family = familyType !== 'single_member';
+      document.getElementById('family-children-count-field').style.display = family ? 'flex' : 'none';
+      document.getElementById('family-children-list-field').style.display = family ? 'flex' : 'none';
+      document.getElementById('new-family-children-count').required = family;
+      const sisterId = document.getElementById('new-sister-id-number');
+      const isFamilyUnit = familyType === 'family_unit';
+      document.getElementById('sister-id-field').style.display = isFamilyUnit ? 'flex' : 'none';
+      document.getElementById('sister-dob-field').style.display = isFamilyUnit ? 'flex' : 'none';
+      sisterId.required = isFamilyUnit;
+      renderMemberFamilyChildren(children);
+    }
+
+    function getStatusFromAttendance(memberId) {
+      const attendance = getStore('attendance_records', []);
+      const recent = attendance.filter(item => item.member_id === memberId && item.date >= getDateDaysAgo(30));
+      if (recent.length >= 12) return { label: 'Active', className: 'status-active' };
+      if (recent.length >= 4) return { label: 'Semi-Active', className: 'status-semi' };
+      return { label: 'Prophetical (Inactive)', className: 'status-inactive' };
+    }
+
+    function getDateDaysAgo(days) {
+      const d = new Date();
+      d.setDate(d.getDate() - days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function renderSelectOptions(select, options, placeholder) {
+      if (!select) return;
+      select.innerHTML = '<option value="">' + placeholder + '</option>' + options.map(item => '<option value="' + item.value + '">' + item.label + '</option>').join('');
+    }
+
+    function populateRoleAndCongregationOptions() {
+      const roleSelect = document.getElementById('new-role-group');
+      if (roleSelect) {
+        roleSelect.innerHTML = ROLES.map(role => '<option value="' + role + '">' + role + '</option>').join('');
+      }
+
+      const filterRole = document.getElementById('filter-role');
+      if (filterRole) {
+        filterRole.innerHTML = '<option value="">All Roles</option>' + ROLES.map(role => '<option value="' + role + '">' + role + '</option>').join('');
+      }
+
+      const congregationOptions = getCongregations().map(c => ({ value: c.id, label: c.name }));
+      renderSelectOptions(document.getElementById('new-congregation'), congregationOptions, '-- Select Congregation --');
+      renderSelectOptions(document.getElementById('filter-congregation'), congregationOptions, 'All Congregations');
+
+      const priestOptions = getMembers().filter(member => member.role_group.toLowerCase().includes('priest') || member.role_group.toLowerCase().includes('underdeacon')).map(member => ({ value: member.id, label: member.first_name + ' ' + member.surname }));
+      renderSelectOptions(document.getElementById('new-assigned-priest'), priestOptions, '-- None --');
+      renderSelectOptions(document.getElementById('new-assigned-elder'), getMembers().filter(member => member.role_group.toLowerCase().includes('elder')).map(member => ({ value: member.id, label: member.first_name + ' ' + member.surname })), '-- None --');
+      renderSelectOptions(document.getElementById('filter-priest'), priestOptions, 'All Priests');
+    }
+
+    function renderMemberTable() {
+      const tableBody = document.getElementById('member-table-body');
+      if (!tableBody) return;
+
+      let members = getMembers();
+      const search = (document.getElementById('search-query') || {}).value || '';
+      const roleFilter = (document.getElementById('filter-role') || {}).value || '';
+      const congregationFilter = (document.getElementById('filter-congregation') || {}).value || '';
+      const priestFilter = (document.getElementById('filter-priest') || {}).value || '';
+
+      if (search) {
+        const term = search.toLowerCase();
+        members = members.filter(member => (
+          (member.first_name || '').toLowerCase().includes(term) ||
+          (member.surname || '').toLowerCase().includes(term) ||
+          (member.initials || '').toLowerCase().includes(term)
+        ));
+      }
+
+      if (roleFilter) members = members.filter(member => member.role_group === roleFilter);
+      if (congregationFilter) members = members.filter(member => String(member.congregation_id) === String(congregationFilter));
+      if (priestFilter) members = members.filter(member => String(member.assigned_priest_id) === String(priestFilter));
+
+      const resultCount = document.getElementById('search-result-count');
+      if (resultCount) {
+        resultCount.textContent = 'Showing ' + members.length + ' of ' + getMembers().length + ' record(s).';
+      }
+
+      const congregationMap = Object.fromEntries(getCongregations().map(c => [c.id, c.name]));
+
+      if (!members.length) {
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No member records found.</td></tr>';
+        return;
+      }
+
+      tableBody.innerHTML = members.map(member => {
+        const status = getStatusFromAttendance(member.id);
+        const congregation = congregationMap[member.congregation_id] || 'Unassigned';
+        const responsibleOfficer = member.assigned_priest_id || member.assigned_elder_id || 'Unassigned';
+        const officerName = getMembers().find(item => item.id === responsibleOfficer);
+        const contactText = [member.contact_number, member.email].filter(Boolean).join('<br>') || 'N/A';
+
+        return '<tr>' +
+          '<td>' + (member.role_group || '') + '</td>' +
+          '<td><strong>' + (member.first_name || '') + ' ' + (member.surname || '') + '</strong></td>' +
+          '<td>' + contactText + '</td>' +
+          '<td>' + congregation + '</td>' +
+          '<td>' + (officerName ? officerName.first_name + ' ' + officerName.surname : 'Unassigned') + '</td>' +
+          '<td><span class="status-badge ' + status.className + '">' + status.label + '</span></td>' +
+          '<td><button type="button" class="secondary" data-member-edit="' + member.id + '" style="padding:4px 8px; font-size:0.75rem;">Edit</button> <button type="button" class="danger" data-member-delete="' + member.id + '" style="padding:4px 8px; font-size:0.75rem;">Delete</button></td>' +
+          '</tr>';
+      }).join('');
+
+      document.querySelectorAll('[data-member-delete]').forEach(button => {
+        button.addEventListener('click', () => deleteMember(button.dataset.memberDelete));
+      });
+
+      document.querySelectorAll('[data-member-edit]').forEach(button => {
+        button.addEventListener('click', () => fillEditForm(button.dataset.memberEdit));
+      });
+    }
+
+    function fillEditForm(memberId) {
+      const member = getMembers().find(item => item.id === memberId);
+      if (!member) return;
+      const linkedChildren = getMembers().filter(item => item.family_main_id === memberId);
+
+      const form = document.getElementById('member-form');
+      if (!form) return;
+
+      form.dataset.editId = memberId;
+      document.getElementById('new-role-group').value = member.role_group || ROLES[0];
+      document.getElementById('new-first-name').value = member.first_name || '';
+      document.getElementById('new-initials').value = member.initials || '';
+      document.getElementById('new-surname').value = member.surname || '';
+      document.getElementById('new-id-number').value = member.id_number || '';
+      document.getElementById('new-email').value = member.email || '';
+      document.getElementById('new-dob').value = member.date_of_birth || '';
+      document.getElementById('new-baptism-date').value = member.baptism_or_taken_up_date || '';
+      document.getElementById('new-sealing-date').value = member.sealing_date || '';
+      document.getElementById('new-has-will').value = member.has_will ? 'true' : 'false';
+      document.getElementById('new-contact').value = member.contact_number || '';
+      document.getElementById('new-address').value = member.address || '';
+      document.getElementById('new-congregation').value = member.congregation_id || '';
+      const familyType = member.family_type || (member.is_family ? 'family_unit' : 'single_member');
+      document.getElementById('new-is-family').value = familyType;
+      const existingCount = Number(member.number_of_children) || 0;
+      const legacyChildCount = Math.max(0, Number(member.family_souls_count || 1) - (familyType === 'family_unit' ? 2 : 1));
+      document.getElementById('new-family-children-count').value = member.is_family
+        ? Math.max(linkedChildren.length, existingCount || legacyChildCount)
+        : 0;
+      document.getElementById('new-sister-id-number').value = member.sister_id_number || '';
+      document.getElementById('new-sister-dob').value = member.sister_dob || getMemberIdDate(member.sister_id_number);
+      document.getElementById('new-assigned-priest').value = member.assigned_priest_id || '';
+      document.getElementById('new-assigned-elder').value = member.assigned_elder_id || '';
+      toggleMemberFamilyFields(linkedChildren);
+      renderMemberFamilyChildren(linkedChildren);
+
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.textContent = 'Update Member';
+    }
+
+    function deleteMember(memberId) {
+      if (!confirm('Delete this member record?')) return;
+      const members = getMembers().filter(item => item.id !== memberId);
+      setStore('church_members', members);
+      renderMemberTable();
+      updateKpis();
+    }
+
+    function updateKpis() {
+      const members = getMembers();
+      const totalSouls = getTotalSouls(members);
+      const congregationCount = new Set(members.map(member => member.congregation_id).filter(Boolean)).size;
+      document.getElementById('kpi-souls').textContent = totalSouls;
+      document.getElementById('kpi-congregations').textContent = congregationCount;
+    }
+
+    function handleMemberSubmit(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const editId = form.dataset.editId;
+      const members = getMembers();
+      const familyType = document.getElementById('new-is-family').value;
+      const isFamily = familyType !== 'single_member';
+      const children = getFamilyChildrenFromForm();
+      const childCount = Number.parseInt(document.getElementById('new-family-children-count').value, 10);
+      if (isFamily && (!Number.isInteger(childCount) || childCount < 0 || childCount !== children.length)) {
+        alert('Enter the number of children and complete the first name and surname for each child.');
+        return;
+      }
+      if (children.some(child => !child.first_name || !child.surname ||
+          (child.id_number && (child.id_number.length < 6 || child.id_number.length > 13)))) {
+        alert('Each child needs a first name and surname. If provided, the ID must be 6 to 13 characters.');
+        return;
+      }
+      if (familyType === 'family_unit' && !document.getElementById('new-sister-id-number').value.trim()) {
+        alert("Enter the Sister's ID number for a Family.");
+        return;
+      }
+      const currentMember = members.find(item => item.id === editId);
+      if (['50_50_sister_family', '50_50_brother_family'].includes(familyType) &&
+          currentMember?.family_type === 'family_unit' &&
+          (currentMember.sister_id_number || currentMember.sister_dob) &&
+          !confirm('Changing to a 50/50 family removes the spouse details stored on this family record. Continue?')) return;
+      const memberId = editId || createLocalMemberId();
+      const payload = {
+        id: memberId,
+        first_name: document.getElementById('new-first-name').value.trim(),
+        initials: document.getElementById('new-initials').value.trim(),
+        surname: document.getElementById('new-surname').value.trim(),
+        id_number: document.getElementById('new-id-number').value.trim(),
+        email: document.getElementById('new-email').value.trim(),
+        date_of_birth: document.getElementById('new-dob').value || '',
+        baptism_or_taken_up_date: document.getElementById('new-baptism-date').value || '',
+        sealing_date: document.getElementById('new-sealing-date').value || '',
+        has_will: document.getElementById('new-has-will').value === 'true',
+        contact_number: document.getElementById('new-contact').value.trim(),
+        address: document.getElementById('new-address').value.trim(),
+        congregation_id: document.getElementById('new-congregation').value,
+        role_group: document.getElementById('new-role-group').value,
+        is_family: isFamily,
+        family_type: isFamily ? familyType : null,
+        family_souls_count: isFamily ? (familyType === 'family_unit' ? 2 : 1) : 1,
+        number_of_children: children.length,
+        family_main_id: isFamily ? null : (members.find(item => item.id === editId)?.family_main_id || null),
+        sister_id_number: familyType === 'family_unit' ? document.getElementById('new-sister-id-number').value.trim() : '',
+        sister_dob: familyType === 'family_unit' ? getMemberIdDate(document.getElementById('new-sister-id-number').value) : '',
+        assigned_priest_id: document.getElementById('new-assigned-priest').value || '',
+        assigned_elder_id: document.getElementById('new-assigned-elder').value || '',
+        assigned_overseer_id: '',
+        is_active: true
+      };
+
+      if (editId) {
+        const index = members.findIndex(m => m.id === editId);
+        if (index >= 0) members[index] = { ...members[index], ...payload };
+      } else {
+        members.push(payload);
+      }
+      const updatedChildren = children.map(child => ({
+        ...members.find(item => item.id === child.id),
+        ...child,
+        id: child.id || createLocalMemberId(),
+        role_group: 'Child',
+        is_family: false,
+        family_type: null,
+        family_souls_count: 1,
+        number_of_children: 0,
+        family_main_id: memberId,
+        congregation_id: payload.congregation_id,
+        assigned_priest_id: payload.assigned_priest_id,
+        assigned_elder_id: payload.assigned_elder_id,
+        assigned_overseer_id: payload.assigned_overseer_id,
+        is_active: true
+      }));
+      const retainedChildIds = new Set(updatedChildren.map(child => child.id));
+      const previousChildIds = new Set(members.filter(item => item.family_main_id === memberId).map(item => item.id));
+      const updatedById = new Map(updatedChildren.map(child => [child.id, child]));
+      const nextMembers = members
+        .map(item => updatedById.get(item.id) || (previousChildIds.has(item.id) && !retainedChildIds.has(item.id)
+          ? { ...item, family_main_id: null }
+          : item));
+      updatedChildren.forEach(child => {
+        if (!nextMembers.some(item => item.id === child.id)) nextMembers.push(child);
+      });
+
+      setStore('church_members', nextMembers);
+      form.reset();
+      delete form.dataset.editId;
+      document.getElementById('new-is-family').value = 'single_member';
+      document.getElementById('new-family-children-count').value = 0;
+      toggleMemberFamilyFields([]);
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.textContent = 'Save Member';
+      populateRoleAndCongregationOptions();
+      renderMemberTable();
+      updateKpis();
+    }
+
+    function createLocalMemberId() {
+      return window.crypto && crypto.randomUUID
+        ? crypto.randomUUID()
+        : 'm-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+    }
+
+    function exportMembersCsv() {
+      const members = getMembers();
+      const csvRows = [
+        ['first_name', 'surname', 'role_group', 'email', 'contact_number', 'congregation_id'],
+        ...members.map(member => [member.first_name, member.surname, member.role_group, member.email, member.contact_number, member.congregation_id])
+      ];
+      const csv = csvRows.map(row => row.map(value => '"' + String(value || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+      const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'members_export_' + new Date().toISOString().slice(0, 10) + '.csv';
+      link.click();
+    }
+
+    function importMembersCsv(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        const text = evt.target.result;
+        const rows = text.split(/\r?\n/).filter(Boolean);
+        if (!rows.length) return;
+        const header = rows[0].split(',').map(part => part.trim().replace(/"/g, ''));
+        const data = rows.slice(1).map(row => {
+          const values = row.match(/(?:"[^"]*"|[^,])+/g) || [];
+          return Object.fromEntries(header.map((key, index) => [key, (values[index] || '').replace(/^"|"$/g, '').trim()]));
+        });
+
+        const members = getMembers();
+        data.forEach(row => {
+          if (!row.first_name && !row.surname) return;
+          members.push({
+            id: 'm-' + Date.now() + '-' + Math.random().toString(16).slice(2),
+            first_name: row.first_name || '',
+            surname: row.surname || '',
+            role_group: row.role_group || 'Brother',
+            email: row.email || '',
+            contact_number: row.contact_number || '',
+            congregation_id: row.congregation_id || getCongregations()[0]?.id || '',
+            is_family: false,
+            family_souls_count: 1,
+            assigned_priest_id: '',
+            assigned_elder_id: '',
+            assigned_overseer_id: '',
+            has_will: false,
+            is_active: true
+          });
+        });
+
+        setStore('church_members', members);
+        populateRoleAndCongregationOptions();
+        renderMemberTable();
+        updateKpis();
+      };
+      reader.readAsText(file);
+    }
+
+    function clearMemberDatabase() {
+      if (!confirm('This will clear all member data. Continue?')) return;
+      setStore('church_members', []);
+      renderMemberTable();
+      updateKpis();
+    }
+
+    document.getElementById('member-form')?.addEventListener('submit', handleMemberSubmit);
+    document.getElementById('search-query')?.addEventListener('input', renderMemberTable);
+    document.getElementById('filter-role')?.addEventListener('change', renderMemberTable);
+    document.getElementById('filter-congregation')?.addEventListener('change', renderMemberTable);
+    document.getElementById('filter-priest')?.addEventListener('change', renderMemberTable);
+    document.getElementById('upload-csv-btn')?.addEventListener('click', () => {
+      const fileInput = document.getElementById('csv-file-input');
+      if (fileInput && fileInput.files && fileInput.files[0]) importMembersCsv(fileInput.files[0]);
+    });
+    document.getElementById('export-csv-btn')?.addEventListener('click', exportMembersCsv);
+    document.getElementById('clear-db-btn')?.addEventListener('click', clearMemberDatabase);
+
+    populateRoleAndCongregationOptions();
+    renderMemberTable();
+    updateKpis();
+  </script>
+</body>
+</html>

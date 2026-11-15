@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Appearance Concept | Overseership Workspace</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #26384d;
+      --muted: #7c8a9c;
+      --green: #3e6f9d;
+      --green-deep: #2c5076;
+      --green-soft: #edf3f9;
+      --gold: #86abd0;
+      --gold-pale: #edf4fb;
+      --canvas: #f4f6f9;
+      --surface: #fff;
+      --line: #e5eaf0;
+      --shadow: 0 14px 34px rgba(38, 64, 94, 0.06), 0 2px 6px rgba(38, 64, 94, 0.03);
+      font-family: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 85% 0%, rgba(199, 166, 106, 0.12), transparent 34rem),
+        var(--canvas);
+    }
+
+    button { font: inherit; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      padding: 26px 17px 18px;
+      color: #f4f2ea;
+      background:
+        radial-gradient(ellipse at 0 0, rgba(199, 166, 106, 0.14), transparent 24rem),
+        linear-gradient(165deg, var(--green) 0%, var(--green-deep) 100%);
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 0 9px 27px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 1px solid rgba(226, 204, 157, 0.58);
+      border-radius: 13px;
+      color: #f2ddb2;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .brand-mark svg { width: 22px; height: 22px; }
+    .brand-name { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: 0.035em; }
+    .brand-subtitle { margin: 4px 0 0; color: #b7c7be; font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; }
+
+    .nav-label {
+      margin: 25px 10px 10px;
+      color: #9caf9f;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .nav-list { display: grid; gap: 5px; }
+
+    .nav-item {
+      display: flex;
+      width: 100%;
+      min-height: 43px;
+      align-items: center;
+      gap: 12px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: #d6dfd8;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+    }
+
+    .nav-item svg { width: 17px; height: 17px; flex: 0 0 auto; opacity: 0.82; }
+    .nav-item span { flex: 1; font-size: 13px; font-weight: 550; }
+    .nav-item:hover { color: white; background: rgba(255, 255, 255, 0.08); }
+    .nav-item.active {
+      color: #fff;
+      border-color: rgba(227, 203, 153, 0.22);
+      background: linear-gradient(100deg, rgba(199, 166, 106, 0.2), rgba(255, 255, 255, 0.07));
+      box-shadow: inset 3px 0 #d0b27b;
+    }
+
+    .nav-count {
+      flex: 0 0 auto !important;
+      padding: 3px 7px;
+      border-radius: 20px;
+      color: #e8d8b8;
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 10px !important;
+    }
+
+    .sidebar-spacer { flex: 1; min-height: 38px; }
+
+    .help-card {
+      margin: 18px 3px;
+      padding: 15px;
+      border: 1px solid rgba(222, 205, 167, 0.2);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .help-card strong { display: block; font-size: 12px; }
+    .help-card p { margin: 7px 0 12px; color: #c0ccc4; font-size: 11px; line-height: 1.55; }
+    .help-card button { padding: 0; border: 0; color: #ead7ae; background: none; font-size: 11px; font-weight: 700; cursor: pointer; }
+
+    .account {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 7px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .avatar {
+      display: grid;
+      width: 35px;
+      height: 35px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid rgba(226, 204, 157, 0.35);
+      border-radius: 50%;
+      color: #f3e5c8;
+      background: rgba(199, 166, 106, 0.2);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .account-info { min-width: 0; flex: 1; }
+    .account-info strong { display: block; overflow: hidden; color: #f7f5ee; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .account-info small { display: block; margin-top: 3px; color: #aebeb3; font-size: 10px; }
+    .account-menu { color: #c1cec4; font-size: 20px; }
+
+    .main-area { min-width: 0; }
+
+    .topbar {
+      display: flex;
+      min-height: 75px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 clamp(22px, 4vw, 56px);
+      border-bottom: 1px solid rgba(225, 226, 216, 0.88);
+      background: rgba(255, 254, 250, 0.76);
+      backdrop-filter: blur(14px);
+    }
+
+    .crumb { display: flex; align-items: center; gap: 9px; color: #8b958d; font-size: 12px; }
+    .crumb strong { color: var(--ink); font-weight: 650; }
+    .crumb span { color: #bdc2b8; }
+
+    .top-actions { display: flex; align-items: center; gap: 17px; }
+
+    .overseership-select {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface);
+    }
+
+    .overseership-select svg { width: 15px; height: 15px; color: #a58b5b; }
+    .overseership-select small { display: block; color: var(--muted); font-size: 9px; }
+    .overseership-select strong { display: block; margin-top: 2px; font-size: 11px; }
+    .notification {
+      position: relative;
+      display: grid;
+      width: 35px;
+      height: 35px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: #57665e;
+      background: var(--surface);
+      cursor: pointer;
+    }
+    .notification svg { width: 16px; height: 16px; }
+    .notification::after { position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; border: 1px solid var(--surface); border-radius: 50%; background: #c27b5b; content: ""; }
+
+    main { width: min(100%, 1510px); margin: 0 auto; padding: 32px clamp(22px, 4vw, 56px) 52px; }
+
+    .welcome-row { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+    .eyebrow { margin: 0 0 7px; color: #9b8459; font-size: 10px; font-weight: 750; letter-spacing: 0.15em; text-transform: uppercase; }
+    h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(29px, 3vw, 38px); font-weight: 500; letter-spacing: -0.035em; line-height: 1.12; }
+    .welcome-copy { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+
+    .date-pill { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; color: #65726b; background: rgba(255, 254, 250, 0.7); font-size: 11px; white-space: nowrap; }
+    .date-pill svg { width: 15px; height: 15px; color: #9b8459; }
+
+    .hero {
+      position: relative;
+      display: flex;
+      min-height: 176px;
+      align-items: center;
+      justify-content: space-between;
+      overflow: hidden;
+      gap: 20px;
+      padding: 28px 34px;
+      border: 1px solid rgba(230, 223, 204, 0.55);
+      border-radius: 16px;
+      color: #fffdf7;
+      background:
+        radial-gradient(ellipse at 82% 120%, rgba(199, 166, 106, 0.31), transparent 22rem),
+        radial-gradient(ellipse at 100% 0%, rgba(170, 194, 174, 0.13), transparent 26rem),
+        linear-gradient(112deg, #204b3d 0%, #183d32 55%, #15362d 100%);
+      box-shadow: 0 16px 34px rgba(24, 61, 50, 0.14);
+    }
+
+    .hero::before, .hero::after { position: absolute; pointer-events: none; content: ""; }
+    .hero::before {
+      top: -120px;
+      right: 5%;
+      width: 310px;
+      height: 310px;
+      border: 1px solid rgba(235, 222, 190, 0.12);
+      border-radius: 50%;
+      box-shadow: 0 0 0 28px rgba(255, 255, 255, 0.018), 0 0 0 58px rgba(255, 255, 255, 0.018), 0 0 0 88px rgba(255, 255, 255, 0.018);
+    }
+    .hero::after { top: 0; bottom: 0; left: 0; width: 4px; background: linear-gradient(#d8bd83, rgba(216, 189, 131, 0.15)); }
+    .hero-content { position: relative; z-index: 1; max-width: 600px; }
+    .hero-kicker { margin: 0 0 9px; color: #e1c993; font-size: 10px; font-weight: 750; letter-spacing: 0.16em; text-transform: uppercase; }
+    .hero h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(22px, 2.4vw, 29px); font-weight: 500; letter-spacing: -0.02em; }
+    .hero p { max-width: 520px; margin: 9px 0 17px; color: #d2dfd5; font-size: 12px; line-height: 1.6; }
+    .hero-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+    .hero-button { display: inline-flex; min-height: 36px; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid rgba(231, 213, 174, 0.55); border-radius: 8px; color: #20392f; background: #e7d5ad; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .hero-button.secondary { color: #f8f6ef; background: rgba(255, 255, 255, 0.075); border-color: rgba(255, 255, 255, 0.21); }
+    .hero-button svg { width: 14px; height: 14px; }
+    .hero-stamp { display: none; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; margin-top: 19px; }
+    .stat-card { position: relative; overflow: hidden; padding: 17px 18px 16px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: var(--shadow); }
+    .stat-card::after { position: absolute; right: -22px; bottom: -50px; width: 100px; height: 100px; border: 1px solid rgba(199, 166, 106, 0.14); border-radius: 50%; box-shadow: 0 0 0 12px rgba(199, 166, 106, 0.035); content: ""; }
+    .stat-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .stat-label { color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: 0.075em; text-transform: uppercase; }
+    .stat-icon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; color: #9a8050; background: var(--gold-pale); }
+    .stat-icon svg { width: 15px; height: 15px; }
+    .stat-number { display: block; margin-top: 11px; font-family: Georgia, "Times New Roman", serif; font-size: 29px; letter-spacing: -0.03em; line-height: 1; }
+    .stat-foot { display: flex; align-items: center; gap: 5px; margin-top: 9px; color: #849087; font-size: 10px; }
+    .stat-trend { color: #487960; font-weight: 700; }
+
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(265px, 0.8fr); gap: 16px; margin-top: 17px; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: 13px; background: var(--surface); box-shadow: var(--shadow); }
+    .panel-heading { display: flex; min-height: 66px; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #efefe8; }
+    .panel-heading h3 { margin: 0; font-size: 13px; font-weight: 700; }
+    .panel-heading p { margin: 4px 0 0; color: #89938c; font-size: 10px; }
+    .text-link { border: 0; color: #587764; background: transparent; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+    .directory-tools { display: flex; align-items: center; gap: 8px; padding: 13px 17px; }
+    .search-box { display: flex; min-width: 130px; height: 34px; flex: 1; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid #e6e8df; border-radius: 8px; color: #97a098; background: #fff; }
+    .search-box svg { width: 14px; height: 14px; flex: 0 0 auto; }
+    .search-box span { color: #9aa39b; font-size: 10px; }
+    .filter-button { display: inline-flex; height: 34px; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid #e6e8df; border-radius: 8px; color: #59685f; background: #fff; font-size: 10px; cursor: pointer; }
+    .filter-button svg { width: 13px; height: 13px; }
+    .add-button { display: inline-flex; height: 34px; align-items: center; gap: 6px; padding: 0 11px; border: 1px solid #234c3f; border-radius: 8px; color: white; background: #234c3f; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .add-button svg { width: 13px; height: 13px; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+    th { padding: 10px 16px; color: #859088; background: #f8f8f2; font-size: 9px; font-weight: 750; letter-spacing: 0.075em; text-transform: uppercase; }
+    td { padding: 11px 16px; border-top: 1px solid #f0f0e9; color: #526158; font-size: 10px; }
+    tbody tr:hover { background: #fbfbf6; }
+    .member-name { display: flex; align-items: center; gap: 9px; color: var(--ink); font-size: 10px; font-weight: 650; }
+    .member-avatar { display: grid; width: 27px; height: 27px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: #567061; background: #e9efe8; font-size: 9px; font-weight: 750; }
+    .member-avatar.gold { color: #977846; background: #f5eedf; }
+    .member-avatar.rose { color: #9b6656; background: #f6eae4; }
+    .role-tag { display: inline-flex; padding: 4px 7px; border: 1px solid #e8eae1; border-radius: 20px; color: #5f7065; background: #fbfbf7; font-size: 9px; }
+    .status { display: inline-flex; align-items: center; gap: 5px; color: #4f7d62; font-size: 9px; font-weight: 650; }
+    .status::before { width: 6px; height: 6px; border-radius: 50%; background: #66a57c; content: ""; }
+    .row-menu { border: 0; color: #879188; background: transparent; font-size: 16px; cursor: pointer; }
+    .table-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 17px; border-top: 1px solid #efefe8; color: #89938c; font-size: 10px; }
+    .pagination { display: flex; gap: 5px; }
+    .page-number { display: grid; width: 24px; height: 24px; place-items: center; border: 1px solid transparent; border-radius: 6px; color: #768279; background: transparent; font-size: 10px; }
+    .page-number.current { border-color: #dce6dd; color: #2d5944; background: #edf3ee; font-weight: 700; }
+
+    .activity-list { display: grid; gap: 0; padding: 2px 17px 8px; }
+    .activity-item { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 12px 0; border-bottom: 1px solid #efefe8; }
+    .activity-item:last-child { border-bottom: 0; }
+    .activity-icon { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 9px; color: #71886f; background: #edf2e9; }
+    .activity-icon.gold { color: #9c8050; background: #f5efdf; }
+    .activity-icon.rose { color: #9c705f; background: #f6ebe5; }
+    .activity-icon svg { width: 15px; height: 15px; }
+    .activity-copy strong { display: block; color: #394b40; font-size: 10px; font-weight: 650; line-height: 1.4; }
+    .activity-copy p { margin: 4px 0 0; color: #909990; font-size: 9px; line-height: 1.45; }
+    .activity-time { display: block; margin-top: 5px; color: #a2aaa2; font-size: 9px; }
+
+    .bottom-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; margin-top: 16px; }
+    .shortcut { display: flex; min-height: 76px; align-items: center; gap: 12px; padding: 13px; border: 1px solid var(--line); border-radius: 12px; color: inherit; background: rgba(255, 254, 250, 0.78); text-align: left; cursor: pointer; transition: transform 150ms ease, box-shadow 150ms ease; }
+    .shortcut:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .shortcut-icon { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 10px; color: #50715c; background: #eaf0e8; }
+    .shortcut-icon.gold { color: #9a8050; background: #f4eedf; }
+    .shortcut-icon.rose { color: #956657; background: #f5eae5; }
+    .shortcut-icon svg { width: 17px; height: 17px; }
+    .shortcut strong { display: block; font-size: 10px; }
+    .shortcut small { display: block; margin-top: 4px; color: #89938c; font-size: 9px; }
+    .shortcut-arrow { margin-left: auto; color: #a5ada5; font-size: 15px; }
+
+    .preview-note { margin: 18px 0 0; color: #91998f; font-size: 10px; text-align: center; }
+
+    @media (max-width: 1050px) {
+      .app-shell { grid-template-columns: 215px minmax(0, 1fr); }
+      .content-grid { grid-template-columns: minmax(0, 1fr); }
+      .activity-list { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+      .activity-item:nth-last-child(2) { border-bottom: 0; }
+    }
+
+    @media (max-width: 720px) {
+      .app-shell { grid-template-columns: minmax(0, 1fr); }
+      .sidebar { padding: 13px 15px; }
+      .brand { padding: 0 1px 12px; border-bottom: 0; }
+      .brand-mark { width: 36px; height: 36px; }
+      .nav-label, .help-card, .account, .sidebar-spacer { display: none; }
+      .nav-list { display: flex; overflow-x: auto; gap: 6px; padding: 0 0 1px; scrollbar-width: none; }
+      .nav-list::-webkit-scrollbar { display: none; }
+      .nav-item { width: auto; min-height: 35px; flex: 0 0 auto; gap: 7px; padding: 0 10px; }
+      .nav-item svg { width: 14px; height: 14px; }
+      .nav-item span { font-size: 11px; }
+      .nav-count { display: none; }
+      .topbar { min-height: 58px; padding: 0 17px; }
+      .overseership-select { padding: 6px 8px; }
+      .overseership-select small { display: none; }
+      .top-actions { gap: 8px; }
+      main { padding: 24px 16px 34px; }
+      .welcome-row { align-items: start; }
+      .date-pill { display: none; }
+      .hero { min-height: 0; padding: 23px 22px; }
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .stat-card { padding: 13px; }
+      .stat-number { font-size: 25px; }
+      .bottom-row { grid-template-columns: 1fr; gap: 8px; }
+    }
+
+    @media (max-width: 460px) {
+      .crumb { font-size: 10px; }
+      .overseership-select { gap: 6px; }
+      .overseership-select strong { font-size: 10px; }
+      .notification { width: 32px; height: 32px; }
+      .welcome-copy { max-width: 245px; line-height: 1.5; }
+      .hero p { font-size: 11px; }
+      .directory-tools { flex-wrap: wrap; }
+      .search-box { flex-basis: 100%; }
+      .activity-list { grid-template-columns: 1fr; }
+      .activity-item:nth-last-child(2) { border-bottom: 1px solid #efefe8; }
+      .panel-heading { padding: 12px; }
+      td, th { padding-right: 11px; padding-left: 11px; }
+    }
+
+    .sidebar { background:
+      radial-gradient(ellipse at 0 0, rgba(183, 208, 230, 0.13), transparent 24rem),
+      linear-gradient(165deg, #496d89 0%, #3b5f7b 100%); }
+    .brand-mark { border-color: rgba(202, 220, 236, 0.46); color: #e0ebf5; }
+    .brand-subtitle { color: #d0dce7; }
+    .nav-label { color: #c8d7e3; }
+    .nav-item { color: #edf3f8; }
+    .nav-item.active { border-color: rgba(210, 226, 239, 0.25); box-shadow: inset 3px 0 #c0d8eb; }
+    .nav-count { color: #e2edf6; }
+    .help-card { border-color: rgba(202, 220, 236, 0.25); }
+    .help-card p { color: #d8e2eb; }
+    .help-card button { color: #dceaf5; }
+    .avatar { border-color: rgba(202, 220, 236, 0.36); color: #edf4fa; background: rgba(168, 193, 216, 0.2); }
+    .account-info small, .account-menu { color: #d3dfe9; }
+    .overseership-select svg, .date-pill svg { color: #6d8eaa; }
+    .notification::after { background: #d18776; }
+    .eyebrow { color: #5e87ad; }
+    .hero {
+      border-color: rgba(194, 211, 226, 0.7);
+      background:
+        radial-gradient(ellipse at 82% 120%, rgba(169, 197, 220, 0.24), transparent 22rem),
+        radial-gradient(ellipse at 100% 0%, rgba(210, 225, 238, 0.12), transparent 26rem),
+        linear-gradient(112deg, #527797 0%, #486e8e 55%, #3f6484 100%);
+      box-shadow: 0 16px 34px rgba(56, 85, 111, 0.12);
+    }
+    .hero::before { border-color: rgba(230, 239, 247, 0.16); }
+    .hero::after { background: linear-gradient(#d0e1ef, rgba(208, 225, 239, 0.16)); }
+    .hero-kicker { color: #e0edf7; }
+    .hero-button { border-color: rgba(224, 237, 248, 0.68); color: #355671; background: #e7f0f7; }
+    .stat-icon { color: #587b9a; }
+    .stat-card::after { border-color: rgba(126, 158, 187, 0.15); }
+    .stat-trend { color: #4e718a; }
+    .text-link { color: #456e91; }
+    .search-box, .filter-button { border-color: #e1e9f0; }
+    .filter-button { color: #4d657b; }
+    .add-button { border-color: #537998; background: #537998; }
+    th { background: #f5f8fb; }
+    td { border-top-color: #ecf0f4; color: #506276; }
+    tbody tr:hover { background: #f8fafc; }
+    .member-avatar { color: #527493; background: #eaf0f5; }
+    .member-avatar.gold { color: #5f7e99; background: #edf2f6; }
+    .member-avatar.rose { color: #607b91; background: #f0f3f6; }
+    .role-tag { border-color: #e4e9ee; color: #5c7185; background: #fafbfd; }
+    .status { color: #4f7d71; }
+    .status::before { background: #66a597; }
+    .page-number.current { border-color: #dce6ee; color: #456b8a; background: #f0f4f8; }
+    .activity-item { border-bottom-color: #edf1f6; }
+    .activity-icon { color: #567693; background: #edf2f6; }
+    .activity-icon.gold { color: #5e7d98; background: #edf2f6; }
+    .activity-icon.rose { color: #637d91; background: #f0f3f6; }
+    .activity-copy strong { color: #40566d; }
+    .shortcut-icon { color: #567693; background: #edf2f6; }
+    .shortcut-icon.gold { color: #5e7d98; background: #edf2f6; }
+    .shortcut-icon.rose { color: #637d91; background: #f0f3f6; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v11M8.5 6.5h7M5 12h14v8H5zM9 20v-4h6v4" />
+          </svg>
+        </div>
+        <div>
+          <p class="brand-name">Overseership</p>
+          <p class="brand-subtitle">Church management</p>
+        </div>
+      </div>
+
+      <p class="nav-label">Workspace</p>
+      <nav class="nav-list">
+        <button class="nav-item active" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="8" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="7" height="6" rx="1.5"/></svg>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20v-1.5a5.5 5.5 0 0 1 11 0V20M16 5.5a3 3 0 0 1 0 5.8M17 14a4.5 4.5 0 0 1 3.5 4.4V20"/></svg>
+          <span>Members</span><span class="nav-count">1,284</span>
+        </button>
+        <button class="nav-item" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h17M8 15l3-4 3 2 5-7"/><path d="M16 6h3v3"/></svg>
+          <span>Attendance</span>
+        </button>
+        <button class="nav-item" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 5.5v13A2.5 2.5 0 0 1 6.5 16H20M8 7h8M8 10h7"/></svg>
+          <span>Testimony</span>
+        </button>
+        <button class="nav-item" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 7h14M7 7l-4 7h8L7 7zM17 7l-4 7h8l-4-7zM8 21h8"/></svg>
+          <span>Prophetic</span>
+        </button>
+        <button class="nav-item" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M16 14h2M7 6V4h10v2M3 10h18"/></svg>
+          <span>Tithes</span>
+        </button>
+        <button class="nav-item" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 20V8l7-5 7 5v12M9 20v-6h6v6M9 9h.01M15 9h.01"/></svg>
+          <span>Hospitals</span>
+        </button>
+        <button class="nav-item" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h17M8 15l3-4 3 2 5-7"/><circle cx="8" cy="15" r="1"/><circle cx="11" cy="11" r="1"/><circle cx="14" cy="13" r="1"/><circle cx="19" cy="6" r="1"/></svg>
+          <span>Reporting</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="help-card">
+        <strong>Need a hand?</strong>
+        <p>Find guidance for managing your overseership workspace.</p>
+        <button type="button">Visit help centre&nbsp; →</button>
+      </div>
+      <div class="account">
+        <div class="avatar">JM</div>
+        <div class="account-info"><strong>Joseph Mokoena</strong><small>Overseer · 10141</small></div>
+        <span class="account-menu">···</span>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div class="crumb">Workspace <span>/</span> <strong>Overview</strong></div>
+        <div class="top-actions">
+          <div class="overseership-select">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 4l9 6.5M5 10v9h14v-9M9 19v-5h6v5"/></svg>
+            <div><small>MY OVERSEERSHIP</small><strong>10141 · Main</strong></div>
+            <span style="color:#9aa39b;font-size:11px;">⌄</span>
+          </div>
+          <button class="notification" type="button" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <div class="welcome-row">
+          <div>
+            <p class="eyebrow">Monday, 12 October 2026</p>
+            <h1>Good morning, Joseph</h1>
+            <p class="welcome-copy">Here is the latest view of your overseership community.</p>
+          </div>
+          <div class="date-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+            12 October 2026
+          </div>
+        </div>
+
+        <section class="hero" aria-label="Welcome">
+          <div class="hero-content">
+            <p class="hero-kicker">Overseership 10141</p>
+            <h2>Serving our community, together.</h2>
+            <p>Your essential member records, ministry activity and reports—thoughtfully brought together in one place.</p>
+            <div class="hero-actions">
+              <button type="button" class="hero-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                Add a member
+              </button>
+              <button type="button" class="hero-button secondary">View reports&nbsp; →</button>
+            </div>
+          </div>
+          <div class="hero-stamp" aria-hidden="true">
+            <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M24 46c2-8 2-15 1-23m0 12c-4-5-8-8-14-10m14 6c5-6 10-9 16-11m-16 5c-1-7 0-12 3-17m-3 24c5-5 10-7 16-8" />
+              <path d="M13 25c-5-3-9-2-10 2 4 1 7 1 10-2Zm-1-1c-2-5 0-9 4-10 2 4 0 7-4 10Zm6-2c-1-6 2-9 6-10 2 4 0 8-6 10Zm6-1c0-6 3-9 7-9 1 5-2 8-7 9Zm5 1c2-6 6-8 10-6-1 5-4 7-10 6Zm5 3c4-5 9-5 12-2-3 4-7 5-12 2Zm-21 4c-3 4-2 8 2 10 3-3 2-7-2-10Zm21-2c4-4 8-4 11 0-3 3-7 4-11 0Z" />
+              <path d="M22 45c-1 2-3 3-5 4m7-3c1 2 2 4 2 6m1-7c2 1 4 3 5 5" />
+              <path d="M5 49c8-3 14-3 20 0s12 3 18 0 11-3 16 0M5 54c8-3 14-3 20 0s12 3 18 0 11-3 16 0" stroke-width="1.4" />
+              <path d="M8 59h8m4 0h7m7 0h8m5 0h9" stroke-width="1" opacity=".8" />
+              <circle cx="10" cy="21" r="1.8" fill="#eaa66b" stroke="none" />
+              <circle cx="18" cy="15" r="1.8" fill="#e57971" stroke="none" />
+              <circle cx="31" cy="11" r="1.8" fill="#eaa66b" stroke="none" />
+              <circle cx="41" cy="16" r="1.8" fill="#e57971" stroke="none" />
+              <circle cx="48" cy="24" r="1.8" fill="#eaa66b" stroke="none" />
+              <path d="m8 44 1.5-2m35 1 1.5-2m-29 4 1.5-2" stroke-width="1" />
+            </svg>
+            <svg class="scene-art" viewBox="0 0 300 190" role="img" aria-label="A fruit-bearing tree with a braided trunk on a grassy islet beside a sparkling stream and waterfall at sunrise">
+              <defs>
+                <linearGradient id="dawn-sky" x1="0" y1="0" x2="0.85" y2="1">
+                  <stop offset="0" stop-color="#f4b17f" />
+                  <stop offset=".52" stop-color="#f7d4a0" />
+                  <stop offset="1" stop-color="#dce7df" />
+                </linearGradient>
+                <linearGradient id="sun-glow" x1="0" y1="0" x2="0" y2="1">
+                  <stop stop-color="#fff8d8" stop-opacity=".95" />
+                  <stop offset="1" stop-color="#f8ce83" stop-opacity=".2" />
+                </linearGradient>
+                <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+                  <stop stop-color="#c9f1f1" />
+                  <stop offset="1" stop-color="#4c9fbd" />
+                </linearGradient>
+                <linearGradient id="stream" x1="0" y1="0" x2="0.1" y2="1">
+                  <stop stop-color="#81d1d4" />
+                  <stop offset="1" stop-color="#367fa5" />
+                </linearGradient>
+                <linearGradient id="trunk" x1="0" y1="0" x2="1" y2="0">
+                  <stop stop-color="#654332" />
+                  <stop offset=".5" stop-color="#bb8050" />
+                  <stop offset="1" stop-color="#744631" />
+                </linearGradient>
+                <clipPath id="scene-clip"><rect width="300" height="190" rx="19" /></clipPath>
+              </defs>
+              <g clip-path="url(#scene-clip)">
+                <rect width="300" height="190" fill="url(#dawn-sky)" />
+                <circle cx="222" cy="48" r="34" fill="#fff2cb" opacity=".22" />
+                <circle cx="222" cy="48" r="23" fill="url(#sun-glow)" />
+                <path d="M0 103 43 64l27 25 35-39 43 46 36-35 44 38 34-30 38 31v44H0Z" fill="#8da6a0" opacity=".68" />
+                <path d="m0 116 44-38 34 34 36-29 42 35 38-29 37 30 34-28 35 25v31H0Z" fill="#597f78" opacity=".78" />
+                <path d="M0 106c23 1 36 13 54 28 12 10 19 9 28-2 7-8 10-21 20-22 12-2 13 16 26 18 12 2 17-19 30-20 12-1 18 17 30 16 12-1 18-15 28-13 12 2 17 17 30 17 12 0 28-14 54-12v44H0Z" fill="#416d64" opacity=".95" />
+                <path d="M0 119c29 1 42 17 58 29 10 7 16 6 23-6 8-13 11-29 21-27 12 2 14 23 26 23 13 0 17-27 29-27 13 0 18 25 31 24 12-1 18-21 28-19 12 2 17 22 30 21 13-1 28-20 54-16v28H0Z" fill="url(#water)" />
+                <path d="M174 112c-1 13 3 21 10 29l-2 16-19-3-4-26 5-18Z" fill="#efffff" opacity=".88" />
+                <path d="M181 115c-2 12 2 19 7 26l-1 16 9-2 1-16-7-24Z" fill="#9ae0e3" opacity=".8" />
+                <path d="M0 146c48-8 69 3 102 5 35 2 60-13 91-11 38 3 58 17 107 8v42H0Z" fill="#54755a" />
+                <path d="M103 139c18-15 39-21 62-21 26 0 50 8 69 24-13 10-33 17-65 17-30 0-51-7-66-20Z" fill="#497956" />
+                <path d="M106 140c19-12 39-17 60-17 23 0 44 6 62 17-16 9-36 13-62 13-25 0-45-4-60-13Z" fill="#84a767" />
+                <path d="M119 150c-16 8-31 20-47 40h174c-15-20-31-31-51-40-12 3-24 4-37 4-14 0-27-1-39-4Z" fill="url(#stream)" />
+                <path d="M151 151c-8 11-9 24-8 39m26-39c11 11 15 24 17 39m-60-30c18 3 43 3 66-1" fill="none" stroke="#c9f4ed" stroke-width="2" stroke-linecap="round" opacity=".85" />
+                <path d="M117 141c8-11 19-18 30-20m14 1c15 1 27 7 37 16" fill="none" stroke="#b9d58b" stroke-width="3" stroke-linecap="round" />
+                <path d="M151 130c-3-18-2-34 0-49m2 34c-11-13-23-20-39-22m40 12c10-15 24-22 39-27m-40 20c-2-17-1-28 4-40m-4 51c9-11 18-16 30-19" fill="none" stroke="url(#trunk)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M149 129c7-16 8-29 2-48m1 37c-9-14-22-22-38-25m39 14c13-16 24-24 39-29m-41 25c2-17 4-28 8-40" fill="none" stroke="#e0ad70" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".9" />
+                <path d="M115 93c-17 0-24-8-22-18 10 1 18 5 22 18Zm-1-2c-15-9-18-19-12-26 9 7 14 15 12 26Zm7-1c-2-15 4-24 13-25 2 11-3 20-13 25Zm28-13c-10-12-9-22-1-28 7 9 8 19 1 28Zm4 2c1-15 9-23 18-21 0 11-6 19-18 21Zm14 7c9-14 19-16 26-9-6 10-15 14-26 9Zm12 6c13-9 23-7 27 2-9 7-19 7-27-2Zm-51-5c-12 5-22 3-25-6 10-5 19-3 25 6Z" fill="#628d5b" stroke="#b7cc86" stroke-width="1" stroke-linejoin="round" />
+                <path d="M106 71c-5-6-4-12 1-15 5 5 5 10-1 15Zm19 15c-3-7 0-12 6-13 3 6 1 11-6 13Zm24-20c-3-7 0-12 6-13 3 6 1 11-6 13Zm20 12c2-7 7-10 13-7-1 7-5 10-13 7Zm-45-2c-7-2-9-7-6-13 7 1 10 5 6 13Z" fill="#87ad66" stroke="#c1d58f" stroke-width=".8" stroke-linejoin="round" />
+                <path d="M100 77c3-5 8-7 13-5m13 8c2-5 6-8 11-8m11-8c3-4 7-6 12-5m8 15c4-3 8-4 12-2" fill="none" stroke="#edc979" stroke-width="1.3" stroke-linecap="round" />
+                <path d="M98 65c1-4 5-6 8-5m17 23c1-3 4-5 7-4m20-22c1-3 4-4 7-3m19 14c2-3 5-4 8-2" fill="none" stroke="#547945" stroke-width="1.2" stroke-linecap="round" />
+                <path d="M97 66c-1-4 0-7 3-9m2 9c3-2 5-3 8-2m15 16c-1-4 0-7 3-9m1 9c3-2 6-2 8 0m14-20c0-4 2-6 5-8m1 8c3-2 6-2 8 0m14 13c1-4 4-6 7-6m-5 8c3-1 6 0 8 2" fill="none" stroke="#f4cf76" stroke-width="1.5" stroke-linecap="round" />
+                <circle cx="97" cy="64" r="4.2" fill="#db5e57" /><circle cx="103" cy="67" r="4" fill="#f0a84f" />
+                <circle cx="127" cy="80" r="4.4" fill="#d64f55" /><circle cx="133" cy="82" r="4" fill="#f1bd53" />
+                <circle cx="151" cy="60" r="4.5" fill="#e45d56" /><circle cx="158" cy="63" r="4.2" fill="#f3bf55" />
+                <circle cx="178" cy="72" r="4.4" fill="#d84f56" /><circle cx="184" cy="74" r="4" fill="#efaa4c" />
+                <circle cx="191" cy="84" r="4.2" fill="#de5b54" /><circle cx="197" cy="85" r="3.8" fill="#f2c253" />
+                <path d="M92 153c8-2 13-2 20 0m61 2c8-2 15-2 22 1m-86 21 8-1m71 2 10-1M27 131c4 1 7 2 10 4m231-6 8-2" fill="none" stroke="#f1ffff" stroke-width="2" stroke-linecap="round" opacity=".9" />
+                <path d="M45 122c2-5 4-7 7-8m-36 20c2-3 4-4 7-4m254 0c-3-3-5-4-8-4M73 153l-2-8m151-1 3-8m-160 20-3-7" fill="none" stroke="#a9c981" stroke-width="2" stroke-linecap="round" />
+                <circle cx="41" cy="120" r="1.8" fill="#fff8d5" /><circle cx="63" cy="135" r="1.4" fill="#d8ffff" />
+                <circle cx="235" cy="129" r="1.8" fill="#fff8d5" /><circle cx="257" cy="142" r="1.4" fill="#d8ffff" />
+                <circle cx="124" cy="128" r="1.5" fill="#fff7d0" /><circle cx="190" cy="129" r="1.5" fill="#fff7d0" />
+              </g>
+            </svg>
+            <svg class="tree-water-art" viewBox="0 0 420 230" role="img" aria-label="Full-grown trees planted along a sparkling flowing stream">
+              <defs>
+                <linearGradient id="riverbank-sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop stop-color="#dceaf1" />
+                  <stop offset="1" stop-color="#f2e8d4" />
+                </linearGradient>
+                <linearGradient id="river-water" x1="0" y1="0" x2="0.1" y2="1">
+                  <stop stop-color="#a5dadd" />
+                  <stop offset=".55" stop-color="#70b9c7" />
+                  <stop offset="1" stop-color="#3d829e" />
+                </linearGradient>
+                <linearGradient id="river-trunk" x1="0" y1="0" x2="1" y2="0">
+                  <stop stop-color="#654938" />
+                  <stop offset=".48" stop-color="#ac7951" />
+                  <stop offset="1" stop-color="#76503a" />
+                </linearGradient>
+                <clipPath id="riverbank-frame"><rect width="420" height="230" rx="18" /></clipPath>
+              </defs>
+              <g clip-path="url(#riverbank-frame)">
+                <rect width="420" height="230" fill="url(#riverbank-sky)" />
+                <circle cx="341" cy="43" r="25" fill="#fff6d9" opacity=".8" />
+                <circle cx="341" cy="43" r="38" fill="#f5d9a5" opacity=".17" />
+                <path d="M0 93 46 56l35 32 43-48 53 54 42-45 44 46 40-34 42 35 42-29 45 36v52H0Z" fill="#bacbc5" />
+                <path d="m0 111 49-36 35 33 43-31 47 39 45-34 42 34 42-30 39 32 41-26 47 32v41H0Z" fill="#78978d" />
+                <path d="M0 128c39-6 71 5 103 15 34 10 61-8 97-11 49-4 80 17 124 14 34-2 62-17 96-12v36H0Z" fill="#658172" />
+                <path d="M0 166c46-3 71-20 112-20 40 0 57 20 96 18 46-2 73-22 113-19 38 3 62 19 99 14v71H0Z" fill="#77915f" />
+                <path d="M0 166c43-4 67-17 108-15 38 2 63 18 103 18 41 0 69-19 109-19 41 0 65 15 100 13v67H0Z" fill="url(#river-water)" />
+                <path d="M0 179c51-4 74-13 116-10 39 3 59 17 98 17 44 0 73-16 112-16 38 0 64 11 94 10" fill="none" stroke="#d8f5ef" stroke-width="2.2" opacity=".86" />
+                <path d="M0 199c40-4 69-8 102-6m32 6c37 3 59 9 94 8m25-11c37-7 68-6 101-2m24 6 42 2" fill="none" stroke="#bde9e9" stroke-width="1.7" stroke-linecap="round" opacity=".9" />
+                <path d="M83 155c2-37 5-71 5-104m0 70C70 98 55 84 38 78m51 30c16-20 31-33 51-43M88 88c-2-22-1-38 3-52m-2 74c15-11 28-16 43-17m196 64c1-31 3-57 2-85m0 61c-13-16-25-25-40-33m40 19c14-14 25-23 41-29m-43-5c0-18 2-31 6-42" fill="none" stroke="url(#river-trunk)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M83 157c-9-7-17-12-28-14m31 12c9-8 19-12 31-14m187 17c-9-8-17-11-27-13m29 14c8-7 18-10 29-12" fill="none" stroke="#d0a16c" stroke-width="2.1" stroke-linecap="round" />
+                <path d="M37 82C12 80 3 65 10 49c17 1 28 12 27 33Zm5-4C29 56 33 37 49 29c12 17 10 34-7 49Zm15-8C57 48 70 31 89 33c4 19-8 32-32 37Zm8 1c10-23 29-31 45-20-6 20-23 28-45 20Zm18-6c3-24 20-38 39-31 1 20-14 33-39 31Zm-42 7C19 76 8 86 11 103c17 1 27-10 30-31Z" fill="#527d59" stroke="#a9c28a" stroke-width="1.2" />
+                <path d="M41 58c-5-17 2-31 17-34 8 15 3 28-17 34Zm33 4c0-21 12-34 29-32 4 18-7 30-29 32Zm232 7c-17-5-23-19-15-33 15 5 21 17 15 33Zm14 1c-1-21 10-34 27-34 5 18-5 30-27 34Zm-43-12c3-19 16-29 31-25 1 17-10 27-31 25Zm44 20c14-15 29-16 39-4-10 14-24 16-39 4Z" fill="#6e965f" stroke="#bed093" stroke-width="1.1" />
+                <path d="M17 55c4-4 8-5 13-4m17-17c4-3 9-4 13-2m18 39c4-4 9-6 15-6m-17-8c4-4 9-6 15-5m-70 29c6-2 11-1 15 2m259-22c4-4 8-5 13-4m-13 24c6-3 12-3 17 0m22-34c5-3 10-2 14 1" fill="none" stroke="#d7dfaa" stroke-width="1.5" stroke-linecap="round" />
+                <circle cx="24" cy="43" r="4.2" fill="#d95655" /><circle cx="30" cy="47" r="4" fill="#efb34f" />
+                <circle cx="67" cy="40" r="4.3" fill="#df6656" /><circle cx="74" cy="43" r="4" fill="#efbe58" />
+                <circle cx="111" cy="48" r="4.1" fill="#d95855" /><circle cx="117" cy="51" r="3.8" fill="#edaa4b" />
+                <circle cx="297" cy="47" r="4.1" fill="#d95855" /><circle cx="303" cy="50" r="3.8" fill="#edaa4b" />
+                <circle cx="337" cy="48" r="4.2" fill="#d95655" /><circle cx="344" cy="51" r="4" fill="#efb34f" />
+                <circle cx="376" cy="62" r="4.2" fill="#df6656" /><circle cx="382" cy="65" r="3.9" fill="#efbe58" />
+                <path d="M19 134c6-7 11-10 17-12m34 19c6-5 12-7 19-7m195-3c5-6 10-8 16-9m31 14c6-5 12-7 19-7m-290 52 15 1m33 9 12-1m128 13 17-1m50-13 13 2m35 11 16-1" fill="none" stroke="#c5d99a" stroke-width="2" stroke-linecap="round" />
+                <path d="M28 174c11-4 22-4 33-1m125 13c12-4 23-4 34-1m118-15c11-4 20-4 29-1" fill="none" stroke="#f1ffff" stroke-width="2" stroke-linecap="round" opacity=".9" />
+                <circle cx="17" cy="164" r="1.7" fill="#fff3d0" /><circle cx="148" cy="163" r="1.5" fill="#fff3d0" />
+                <circle cx="270" cy="169" r="1.7" fill="#fff3d0" /><circle cx="397" cy="163" r="1.5" fill="#fff3d0" />
+              </g>
+            </svg>
+          </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Community at a glance">
+          <article class="stat-card">
+            <div class="stat-head"><span class="stat-label">Total souls</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1M16 5.5a3 3 0 0 1 0 5.8M17 14a5 5 0 0 1 4 5"/></svg></span></div>
+            <strong class="stat-number">1,284</strong><div class="stat-foot"><span class="stat-trend">↑ 2.4%</span> from last month</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head"><span class="stat-label">Congregations</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 20V8l7-5 7 5v12M9 20v-6h6v6"/></svg></span></div>
+            <strong class="stat-number">12</strong><div class="stat-foot">Across your overseership</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head"><span class="stat-label">This month</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h3M8 17h6"/></svg></span></div>
+            <strong class="stat-number">86</strong><div class="stat-foot">Activity records captured</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head"><span class="stat-label">Needs attention</span><span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.8 19h18.4L12 3zM12 9v4M12 16h.01"/></svg></span></div>
+            <strong class="stat-number">04</strong><div class="stat-foot">Records to review</div>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <div><h3>Member directory</h3><p>Recently updated member records</p></div>
+              <button type="button" class="text-link">View all members&nbsp; →</button>
+            </div>
+            <div class="directory-tools">
+              <div class="search-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+                <span>Search by name or surname</span>
+              </div>
+              <button class="filter-button" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 6h16M7 12h10m-7 6h4"/></svg>Filter</button>
+              <button class="add-button" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add member</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Member</th><th>Role</th><th>Congregation</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td><div class="member-name"><span class="member-avatar">TM</span>Thabo Mokoena</div></td><td><span class="role-tag">Elder</span></td><td>Central</td><td><span class="status">Active</span></td><td><button class="row-menu" aria-label="Thabo Mokoena actions">···</button></td></tr>
+                  <tr><td><div class="member-name"><span class="member-avatar gold">LN</span>Lerato Nkosi</div></td><td><span class="role-tag">Sister</span></td><td>Riverside</td><td><span class="status">Active</span></td><td><button class="row-menu" aria-label="Lerato Nkosi actions">···</button></td></tr>
+                  <tr><td><div class="member-name"><span class="member-avatar rose">PD</span>Pieter Dlamini</div></td><td><span class="role-tag">Priest</span></td><td>West Park</td><td><span class="status">Active</span></td><td><button class="row-menu" aria-label="Pieter Dlamini actions">···</button></td></tr>
+                  <tr><td><div class="member-name"><span class="member-avatar">SN</span>Sipho Ndlovu</div></td><td><span class="role-tag">Brother</span></td><td>Central</td><td><span class="status">Active</span></td><td><button class="row-menu" aria-label="Sipho Ndlovu actions">···</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer"><span>Showing 4 of 1,284 members</span><div class="pagination"><span class="page-number current">1</span><span class="page-number">2</span><span class="page-number">3</span><span class="page-number">…</span><span class="page-number">›</span></div></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div><h3>Recent activity</h3><p>Updates from your community</p></div>
+              <button type="button" class="text-link">See all&nbsp; →</button>
+            </div>
+            <div class="activity-list">
+              <div class="activity-item">
+                <span class="activity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1M17 8h4m-2-2v4"/></svg></span>
+                <div class="activity-copy"><strong>New member added</strong><p>Amara Khumalo · Central</p><span class="activity-time">Today, 09:42</span></div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M8 14h3"/></svg></span>
+                <div class="activity-copy"><strong>Attendance recorded</strong><p>Sunday service · Riverside</p><span class="activity-time">Today, 08:15</span></div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-icon rose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h17M8 15l3-4 3 2 5-7"/></svg></span>
+                <div class="activity-copy"><strong>Monthly report ready</strong><p>September overseership summary</p><span class="activity-time">Yesterday, 16:30</span></div>
+              </div>
+              <div class="activity-item">
+                <span class="activity-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 20V8l7-5 7 5v12M9 20v-6h6v6"/></svg></span>
+                <div class="activity-copy"><strong>Congregation updated</strong><p>New officer assigned · West Park</p><span class="activity-time">Yesterday, 14:06</span></div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="bottom-row" aria-label="Quick actions">
+          <button class="shortcut" type="button"><span class="shortcut-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span><strong>Capture attendance</strong><small>Record today's service</small></span><span class="shortcut-arrow">→</span></button>
+          <button class="shortcut" type="button"><span class="shortcut-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 19V5M4 19h17M8 15l3-4 3 2 5-7"/></svg></span><span><strong>Open reporting</strong><small>View trends and summaries</small></span><span class="shortcut-arrow">→</span></button>
+          <button class="shortcut" type="button"><span class="shortcut-icon rose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 5.5v13A2.5 2.5 0 0 1 6.5 16H20"/></svg></span><span><strong>Manage testimony</strong><small>Review houses and visits</small></span><span class="shortcut-arrow">→</span></button>
+        </section>
+        <p class="preview-note">Appearance concept · Sample information for design review only</p>
+      </main>
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll('.nav-item').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        button.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

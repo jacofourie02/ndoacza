@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secure Prophetic Module</title>
+</head>
+<body>
+  <p>Opening the secure Prophetic module. If you are not redirected, <a href="index.html?view=view-prophetic">continue to sign in</a>.</p>
+  <script>
+    const secureDashboard = new URL('index.html?view=view-prophetic', window.location.href);
+    window.top.location.replace(secureDashboard.href);
+  </script>
+</body>
+</html>

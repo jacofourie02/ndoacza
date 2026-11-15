@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hospitals Module</title>
+  <style>
+    :root { --bg: #f3f4f6; --card: #ffffff; --border: #e1e1e1; --primary: #0078d4; --muted: #605e5c; --success: #107c41; --danger: #a80000; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #252423; }
+    .wrap { padding: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    h2, h3 { margin-top: 0; color: var(--primary); }
+    p { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    input, select, button { font: inherit; }
+    input, select { width: 100%; padding: 9px 10px; border: 1px solid #8a8886; border-radius: 4px; }
+    button { background: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .success { background: var(--success); }
+    .danger { background: var(--danger); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { background: #faf9f8; color: var(--muted); text-transform: uppercase; font-size: 0.72rem; }
+    .status { margin-top: 8px; color: var(--muted); font-size:0.85rem; }
+    .discharge-controls { display: flex; gap: 6px; min-width: 205px; }
+    .discharge-controls input { min-width: 125px; padding: 5px; }
+    .archive-card { overflow-x: auto; }
+    @media (max-width: 700px) {
+      .wrap { padding: 12px; }
+      .card { overflow-x: auto; }
+      form.grid { min-width: 0; }
+      table { min-width: 850px; }
+    }
+  </style>
+</head>
+<body>
+  <script>window.location.replace(new URL('index.html?view=view-hospitals', window.location.href).href);</script>
+  <noscript><p>This module requires JavaScript. <a href="index.html?view=view-hospitals">Open Hospital Visits in the secure dashboard</a>.</p></noscript>
+  <div class="wrap">
+    <div class="card">
+      <h2>Hospital Visits</h2>
+      <p>Select an existing admission to record another visit without counting it as a new admission.</p>
+      <form id="hospital-form" class="grid">
+        <div class="field" style="grid-column: 1 / -1;"><label for="hospital-existing-admission">Existing admission (optional)</label><select id="hospital-existing-admission"><option value="">-- Record a new admission --</option></select></div>
+        <div class="field"><label for="hospital-admission-date">Date Admitted</label><input id="hospital-admission-date" type="date" required /></div>
+        <div class="field"><label for="hospital-visit-date">Date Visited</label><input id="hospital-visit-date" type="date" required /></div>
+        <div class="field"><label for="hospital-officer-role">Which Office Visited</label><select id="hospital-officer-role"><option value="">-- Select Office --</option><option>Priest</option><option>Elder</option><option>Overseer</option><option>Prophet</option></select></div>
+        <div class="field"><label for="hospital-officer">Name of Officer</label><select id="hospital-officer"><option value="">-- Select Officer --</option></select></div>
+        <div class="field"><label for="hospital-name">To which hospital was person admitted</label><input id="hospital-name" type="text" required /></div>
+        <div class="field"><label for="hospital-office">Office of Person Visited</label><input id="hospital-office" type="text" /></div>
+        <div class="field"><label for="hospital-patient-name">Name</label><input id="hospital-patient-name" type="text" required /></div>
+        <div class="field"><label for="hospital-patient-surname">Surname</label><input id="hospital-patient-surname" type="text" required /></div>
+        <div class="field"><label for="hospital-town">Town / City</label><input id="hospital-town" type="text" /></div>
+        <button id="hospital-submit" type="submit" class="success" style="grid-column: 1 / -1;">Add Hospital Admission and Visit</button>
+      </form>
+      <div id="hospital-status" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h3>People Currently in Hospital</h3>
+      <table>
+        <thead><tr><th>Admission</th><th>Last Visit</th><th>Visits</th><th>Name of Officer</th><th>Which Office Visited</th><th>Hospital</th><th>Person</th><th>Town / City</th><th>Status</th><th>Discharge</th></tr></thead>
+        <tbody id="hospital-table-body"><tr><td colspan="10" style="text-align:center;">No members currently in hospital.</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card archive-card">
+      <h3>Hospital Archive (Discharged)</h3>
+      <table>
+        <thead><tr><th>Admission</th><th>Discharged</th><th>Visits</th><th>Hospital</th><th>Person</th><th>Town / City</th></tr></thead>
+        <tbody id="hospital-archive-body"><tr><td colspan="6" style="text-align:center;">No discharged admissions.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    function getStore(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } }
+    function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function getMembers() { return getStore('church_members', []); }
+    function getAdmissions() { return getStore('hospital_admissions', []); }
+    function getHospitalArchive() { return getStore('hospital_archive', []); }
+    function makeId() { return window.crypto && crypto.randomUUID ? crypto.randomUUID() : 'hospital-' + Date.now() + '-' + Math.random().toString(36).slice(2); }
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, function (character) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character];
+      });
+    }
+    function today() {
+      const date = new Date();
+      return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+    }
+
+    function migrateHospitalVisits() {
+      if (localStorage.getItem('hospital_admissions') !== null) return;
+      const legacyVisits = getStore('hospital_visits', []).concat(getStore('hospital-visits', []));
+      const admissions = [];
+      legacyVisits.forEach(function (visit, index) {
+        if (Array.isArray(visit.visits)) {
+          admissions.push(visit);
+          return;
+        }
+        const key = [visit.person_name, visit.person_surname, visit.admission_date, visit.hospital_name]
+          .map(value => String(value || '').trim().toLowerCase()).join('|');
+        let admission = admissions.find(item => item._legacy_key === key);
+        if (!admission) {
+          admission = {
+            id: 'legacy-hospital-' + index,
+            admission_date: visit.admission_date || '',
+            hospital_name: visit.hospital_name || '',
+            person_name: visit.person_name || '',
+            person_surname: visit.person_surname || '',
+            town: visit.town || '',
+            visits: [],
+            _legacy_key: key
+          };
+          admissions.push(admission);
+        }
+        const officerId = visit.officer_id || visit.officer || '';
+        const officer = getMembers().find(member => String(member.id) === String(officerId));
+        admission.visits.push({
+          id: makeId(),
+          visit_date: visit.visit_date || '',
+          office_visited: visit.officer_role || '',
+          officer_id: officerId,
+          officer_name: visit.officer_name || (officer ? officer.first_name + ' ' + officer.surname : ''),
+          person_office: visit.office || visit.office_of_person || ''
+        });
+      });
+      admissions.forEach(admission => delete admission._legacy_key);
+      setStore('hospital_admissions', admissions);
+      if (localStorage.getItem('hospital_archive') === null) {
+        setStore('hospital_archive', getStore('hospital-archive', []));
+      }
+    }
+
+    function setAdmissionFieldsDisabled(disabled) {
+      ['hospital-admission-date', 'hospital-name', 'hospital-patient-name', 'hospital-patient-surname', 'hospital-town'].forEach(function (id) {
+        document.getElementById(id).disabled = disabled;
+      });
+      document.getElementById('hospital-submit').textContent = disabled ? 'Add Another Hospital Visit' : 'Add Hospital Admission and Visit';
+    }
+
+    function renderExistingAdmissions() {
+      const select = document.getElementById('hospital-existing-admission');
+      if (!select) return;
+      const selectedId = select.value;
+      const active = getAdmissions();
+      select.innerHTML = '<option value="">-- Record a new admission --</option>' + active.map(function (admission) {
+        const name = (admission.person_name || '') + ' ' + (admission.person_surname || '');
+        const label = name.trim() + ' — ' + (admission.hospital_name || 'Hospital') + ' (admitted ' + (admission.admission_date || 'date unknown') + ')';
+        return '<option value="' + escapeHtml(admission.id) + '">' + escapeHtml(label) + '</option>';
+      }).join('');
+      if (active.some(admission => String(admission.id) === selectedId)) select.value = selectedId;
+    }
+
+    function renderHospitalOfficers() {
+      const role = document.getElementById('hospital-officer-role').value;
+      const officerSelect = document.getElementById('hospital-officer');
+      if (!officerSelect) return;
+      const selectedId = officerSelect.value;
+      const filtered = getMembers().filter(member => !role || String(member.role_group || '').toLowerCase().includes(role.toLowerCase()));
+      officerSelect.innerHTML = '<option value="">-- Select Officer --</option>' + filtered.map(member => '<option value="' + escapeHtml(member.id) + '">' + escapeHtml((member.first_name || '') + ' ' + (member.surname || '')) + '</option>').join('');
+      if (filtered.some(member => String(member.id) === selectedId)) officerSelect.value = selectedId;
+    }
+
+    function renderHospitalTable() {
+      const tbody = document.getElementById('hospital-table-body');
+      const archiveBody = document.getElementById('hospital-archive-body');
+      if (!tbody || !archiveBody) return;
+      const admissions = getAdmissions();
+      const people = getMembers();
+      tbody.innerHTML = admissions.length ? admissions.map(function (admission) {
+        const visits = Array.isArray(admission.visits) ? admission.visits : [];
+        const latestVisit = visits.slice().sort((a, b) => String(b.visit_date || '').localeCompare(String(a.visit_date || '')))[0];
+        const officerNames = Array.from(new Set(visits.map(function (visit) {
+          const member = people.find(item => item.id === visit.officer_id);
+          return visit.officer_name || (member ? member.first_name + ' ' + member.surname : '');
+        }).filter(Boolean))).join(', ');
+        return '<tr><td>' + escapeHtml(admission.admission_date || '-') + '</td><td>' + escapeHtml(latestVisit ? latestVisit.visit_date || '-' : '-') + '</td><td>' + visits.length + '</td><td>' + escapeHtml(officerNames || '-') + '</td><td>' + escapeHtml(latestVisit && latestVisit.office_visited || '-') + '</td><td>' + escapeHtml(admission.hospital_name || '-') + '</td><td>' + escapeHtml((admission.person_name || '') + ' ' + (admission.person_surname || '')) + '</td><td>' + escapeHtml(admission.town || '-') + '</td><td>Admitted</td><td><div class="discharge-controls"><input type="date" aria-label="Discharge date" max="' + today() + '"><button type="button" class="danger" data-discharge-admission="' + escapeHtml(admission.id) + '" style="padding:4px 8px; font-size:0.75rem;">Discharge &amp; Archive</button></div></td></tr>';
+      }).join('') : '<tr><td colspan="10" style="text-align:center;">No members currently in hospital.</td></tr>';
+
+      const archived = getHospitalArchive();
+      archiveBody.innerHTML = archived.length ? archived.slice().reverse().map(function (admission) {
+        return '<tr><td>' + escapeHtml(admission.admission_date || '-') + '</td><td>' + escapeHtml(admission.discharged_date || '-') + '</td><td>' + (Array.isArray(admission.visits) ? admission.visits.length : 0) + '</td><td>' + escapeHtml(admission.hospital_name || '-') + '</td><td>' + escapeHtml((admission.person_name || '') + ' ' + (admission.person_surname || '')) + '</td><td>' + escapeHtml(admission.town || '-') + '</td></tr>';
+      }).join('') : '<tr><td colspan="6" style="text-align:center;">No discharged admissions.</td></tr>';
+      renderExistingAdmissions();
+    }
+
+    function archiveHospitalAdmission(admissionId, dischargeDate) {
+      const admissions = getAdmissions();
+      const index = admissions.findIndex(admission => String(admission.id) === admissionId);
+      if (index === -1) return;
+      const admission = admissions[index];
+      if (!dischargeDate) {
+        document.getElementById('hospital-status').textContent = 'Select a discharge date before archiving this admission.';
+        return;
+      }
+      if (admission.admission_date && dischargeDate < admission.admission_date) {
+        document.getElementById('hospital-status').textContent = 'Discharge date cannot be earlier than the admission date.';
+        return;
+      }
+      if (dischargeDate > today()) {
+        document.getElementById('hospital-status').textContent = 'Discharge date cannot be in the future.';
+        return;
+      }
+      admissions.splice(index, 1);
+      setStore('hospital_admissions', admissions);
+      const archive = getHospitalArchive();
+      archive.push(Object.assign({}, admission, { discharged_date: dischargeDate }));
+      setStore('hospital_archive', archive);
+      renderHospitalTable();
+      document.getElementById('hospital-status').textContent = 'Admission and visit history moved to the Hospital Archive.';
+    }
+
+    document.getElementById('hospital-existing-admission').addEventListener('change', function () {
+      const admission = getAdmissions().find(item => String(item.id) === this.value);
+      setAdmissionFieldsDisabled(Boolean(admission));
+      if (admission) {
+        document.getElementById('hospital-admission-date').value = admission.admission_date || '';
+        document.getElementById('hospital-name').value = admission.hospital_name || '';
+        document.getElementById('hospital-patient-name').value = admission.person_name || '';
+        document.getElementById('hospital-patient-surname').value = admission.person_surname || '';
+        document.getElementById('hospital-town').value = admission.town || '';
+      } else {
+        ['hospital-admission-date', 'hospital-name', 'hospital-patient-name', 'hospital-patient-surname', 'hospital-town'].forEach(id => {
+          document.getElementById(id).value = '';
+        });
+      }
+      document.getElementById('hospital-status').textContent = '';
+    });
+    document.getElementById('hospital-officer-role').addEventListener('change', renderHospitalOfficers);
+    document.getElementById('hospital-table-body').addEventListener('click', function (event) {
+      const button = event.target.closest('[data-discharge-admission]');
+      if (!button) return;
+      const dateInput = button.closest('tr').querySelector('input[type="date"]');
+      archiveHospitalAdmission(button.dataset.dischargeAdmission, dateInput.value);
+    });
+    document.getElementById('hospital-form')?.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const admissionId = document.getElementById('hospital-existing-admission').value;
+      const admissionDate = document.getElementById('hospital-admission-date').value;
+      const visitDate = document.getElementById('hospital-visit-date').value;
+      const hospitalName = document.getElementById('hospital-name').value.trim();
+      const personName = document.getElementById('hospital-patient-name').value.trim();
+      const personSurname = document.getElementById('hospital-patient-surname').value.trim();
+      const admissionRequiredFieldsMissing = !admissionId && (!admissionDate || !hospitalName || !personName || !personSurname);
+      if (!visitDate || admissionRequiredFieldsMissing) {
+        document.getElementById('hospital-status').textContent = 'Please complete all required hospital fields.';
+        return;
+      }
+      if (admissionDate && visitDate < admissionDate) {
+        document.getElementById('hospital-status').textContent = 'Visit date cannot be earlier than the admission date.';
+        return;
+      }
+      if (visitDate > today()) {
+        document.getElementById('hospital-status').textContent = 'Visit date cannot be in the future.';
+        return;
+      }
+      const officerId = document.getElementById('hospital-officer').value;
+      const officer = getMembers().find(member => String(member.id) === officerId);
+      const visit = {
+        id: makeId(),
+        visit_date: visitDate,
+        office_visited: document.getElementById('hospital-officer-role').value,
+        officer_id: officerId,
+        officer_name: officer ? officer.first_name + ' ' + officer.surname : '',
+        person_office: document.getElementById('hospital-office').value.trim()
+      };
+      const admissions = getAdmissions();
+      if (admissionId) {
+        const admission = admissions.find(item => String(item.id) === admissionId);
+        if (!admission) {
+          document.getElementById('hospital-status').textContent = 'That admission is no longer active. Refresh the page and try again.';
+          renderHospitalTable();
+          return;
+        }
+        admission.visits = Array.isArray(admission.visits) ? admission.visits : [];
+        admission.visits.push(visit);
+        setStore('hospital_admissions', admissions);
+      } else {
+        admissions.push({
+          id: makeId(),
+          admission_date: admissionDate,
+          hospital_name: hospitalName,
+          person_name: personName,
+          person_surname: personSurname,
+          town: document.getElementById('hospital-town').value.trim(),
+          visits: [visit]
+        });
+        setStore('hospital_admissions', admissions);
+      }
+      document.getElementById('hospital-form').reset();
+      document.getElementById('hospital-visit-date').value = today();
+      setAdmissionFieldsDisabled(false);
+      renderHospitalTable();
+      document.getElementById('hospital-status').textContent = admissionId ? 'Additional hospital visit saved.' : 'Hospital admission and first visit saved.';
+    });
+
+    migrateHospitalVisits();
+    document.getElementById('hospital-visit-date').value = today();
+    renderHospitalOfficers();
+    renderHospitalTable();
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance Module</title>
+  <style>
+    :root { --bg: #f3f4f6; --card: #ffffff; --border: #e1e1e1; --primary: #0078d4; --muted: #605e5c; --success: #107c41; --danger: #a80000; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: #252423; }
+    .wrap { padding: 24px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px; margin-bottom: 20px; }
+    h2, h3 { margin-top: 0; color: var(--primary); }
+    p { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; }
+    input, select, button { font: inherit; }
+    input, select { width: 100%; padding: 9px 10px; border: 1px solid #8a8886; border-radius: 4px; }
+    button { background: var(--primary); color: white; border: none; padding: 10px 14px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    .secondary { background: #605e5c; }
+    .success { background: var(--success); }
+    .danger { background: var(--danger); }
+    .checklist { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+    .check-item { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; background: #fafafa; }
+    .check-item input[type="checkbox"] { flex: 0 0 auto; width: auto; }
+    .checklist > p { grid-column: 1 / -1; }
+    .visitor-row { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)) auto; gap: 10px; align-items: end; margin-top: 8px; }
+    .status { margin-top: 8px; color: var(--muted); font-size:0.85rem; }
+  </style>
+</head>
+<body>
+  <script>window.location.replace(new URL('index.html?view=view-activity-attendance', window.location.href).href);</script>
+  <noscript><p>This module requires JavaScript. <a href="index.html?view=view-activity-attendance">Open Attendance in the secure dashboard</a>.</p></noscript>
+  <div class="wrap">
+    <div class="card">
+      <h2>Record Activity Attendance</h2>
+      <form id="attendance-form" class="grid">
+        <div class="field"><label>Congregation</label><select id="attendance-congregation"></select></div>
+        <div class="field"><label>Allocated Officer</label><select id="attendance-officer"><option value="">-- All Officers --</option></select></div>
+        <div class="field"><label>Select Activity</label><select id="attendance-activity">
+          <option>Sunday Morning Service</option><option>Sunday Evening Service</option><option>Monday Testimony</option><option>Tuesday Choir/Play</option><option>Wednesday Evening Bread Break</option><option>Thursday Testimony</option><option>Friday Choir/Play</option><option>Saturday Activity</option>
+        </select></div>
+        <div class="field"><label>Activity Date</label><input id="attendance-date" type="date" /></div>
+        <div style="grid-column: 1 / -1;">
+          <p style="margin: 0 0 8px;">Member List</p>
+          <div id="attendance-member-list" class="checklist"></div>
+        </div>
+        <div style="grid-column: 1 / -1; margin-top: 8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <h3 style="margin:0; font-size:1rem;">Visitors</h3>
+            <button type="button" class="secondary" id="add-visitor">+ Add Visitor</button>
+          </div>
+          <div id="attendance-visitors"></div>
+        </div>
+        <button type="submit" class="success" style="grid-column: 1 / -1;">Save Attendance</button>
+      </form>
+      <div id="attendance-status" class="status"></div>
+    </div>
+  </div>
+
+  <script>
+    const defaultCongregations = [
+      { id: 'cong-1', name: 'Main Church' },
+      { id: 'cong-2', name: 'Forest View' },
+      { id: 'cong-3', name: 'City Outreach' }
+    ];
+
+    function getStore(key, fallback) {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
+    }
+    function setStore(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+    function getMembers() { return getStore('church_members', []); }
+    function getCongregations() { const value = getStore('church_congregations', null); return value && value.length ? value : defaultCongregations; }
+
+    function populateAttendanceOptions() {
+      const congregations = getCongregations();
+      const congregationSelect = document.getElementById('attendance-congregation');
+      if (congregationSelect) {
+        congregationSelect.innerHTML = '<option value="">-- Select Congregation --</option>' + congregations.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
+      }
+
+      const priestOptions = getMembers().filter(item => item.role_group.toLowerCase().includes('priest')).map(item => ({ value: item.id, label: item.first_name + ' ' + item.surname }));
+      const officerSelect = document.getElementById('attendance-officer');
+      if (officerSelect) {
+        officerSelect.innerHTML = '<option value="">-- All Officers --</option>' + priestOptions.map(item => '<option value="' + item.value + '">' + item.label + '</option>').join('');
+      }
+    }
+
+    function renderMemberList() {
+      const congregationId = document.getElementById('attendance-congregation').value;
+      const officerId = document.getElementById('attendance-officer').value;
+      const list = document.getElementById('attendance-member-list');
+      if (!list) return;
+
+      if (!congregationId) {
+        list.innerHTML = '<p style="margin:0; color:var(--muted);">Select a congregation to load members.</p>';
+        return;
+      }
+
+      let members = getMembers().filter(member => String(member.congregation_id) === String(congregationId));
+      if (officerId) members = members.filter(member => String(member.assigned_priest_id) === String(officerId));
+
+      if (!members.length) {
+        list.innerHTML = '<p style="margin:0; color:var(--muted);">No members found for the selected filter.</p>';
+        return;
+      }
+
+      list.innerHTML = members.map(member => '<label class="check-item"><input type="checkbox" class="attendance-member" value="' + member.id + '" /> ' + member.first_name + ' ' + member.surname + ' (' + member.role_group + ')</label>').join('');
+    }
+
+    function addVisitorRow() {
+      const container = document.getElementById('attendance-visitors');
+      if (!container) return;
+      const box = document.createElement('div');
+      box.className = 'visitor-row';
+      box.innerHTML = '<div class="field"><label>Name</label><input type="text" class="visitor-name" /></div>' +
+        '<div class="field"><label>Surname</label><input type="text" class="visitor-surname" /></div>' +
+        '<div class="field"><label>Contact</label><input type="text" class="visitor-contact" /></div>' +
+        '<button type="button" class="danger" onclick="this.parentElement.remove()">Remove</button>';
+      container.appendChild(box);
+    }
+
+    document.getElementById('attendance-congregation')?.addEventListener('change', renderMemberList);
+    document.getElementById('attendance-officer')?.addEventListener('change', renderMemberList);
+    document.getElementById('add-visitor')?.addEventListener('click', addVisitorRow);
+
+    document.getElementById('attendance-form')?.addEventListener('submit', function (event) {
+      event.preventDefault();
+      const selected = Array.from(document.querySelectorAll('.attendance-member:checked')).map(item => item.value);
+      const records = getStore('attendance_records', []);
+      const date = document.getElementById('attendance-date').value || new Date().toISOString().slice(0, 10);
+      const activity = document.getElementById('attendance-activity').value;
+      const congregationId = document.getElementById('attendance-congregation').value;
+
+      selected.forEach(memberId => {
+        records.push({ member_id: memberId, date, activity, congregation_id: congregationId, status: 'present' });
+      });
+
+      const visitors = Array.from(document.querySelectorAll('#attendance-visitors .visitor-name')).map((nameInput, index) => ({
+        name: nameInput.value,
+        surname: document.querySelectorAll('#attendance-visitors .visitor-surname')[index]?.value || '',
+        contact: document.querySelectorAll('#attendance-visitors .visitor-contact')[index]?.value || '',
+        date, activity
+      })).filter(item => item.name || item.surname || item.contact);
+
+      setStore('attendance_records', records);
+      setStore('attendance_visitors', visitors);
+      document.getElementById('attendance-status').textContent = 'Saved attendance for ' + selected.length + ' member(s) and ' + visitors.length + ' visitor(s).';
+      document.getElementById('attendance-form').reset();
+      populateAttendanceOptions();
+      renderMemberList();
+    });
+
+    populateAttendanceOptions();
+    renderMemberList();
+  </script>
+</body>
+</html>
