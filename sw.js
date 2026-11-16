@@ -7,6 +7,16 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).catch(async (error) => {
+        const response = await caches.match(e.request);
+        if (response) return response;
+        throw error;
+      })
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((response) => response || fetch(e.request))
   );

@@ -798,7 +798,7 @@
     body.view-only form.form-grid,
     body.view-only table .btn,
     body.view-only #admin-dummy-data-card,
-    body.view-only #elder-login-management-panel,
+    body.view-only #account-invitations-nav,
     body.view-only .dash-card:has(> #add-member-form) { display: none !important; }
   </style>
 </head>
@@ -843,7 +843,7 @@
               <input type="password" id="password" autocomplete="current-password" placeholder="••••••••••••" onkeydown="handleLoginKey(event)">
             </div>
             <button id="login-submit-button" onclick="handleLogin()">Sign In to Dashboard</button>
-            <button type="button" class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="showPasswordResetRequest()" hidden>Forgot password?</button>
+            <button type="button" class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="showPasswordResetRequest()">Forgot password?</button>
           </div>
           <div id="password-reset-request-fields" hidden>
             <p>Enter your account email and we’ll send a secure password reset link if an account exists.</p>
@@ -924,6 +924,10 @@
           <button type="button" data-dashboard-view="view-reporting" onclick="switchView('view-reporting')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h17M8 15l3-4 3 2 5-7"/></svg>
             Reporting
+          </button>
+          <button type="button" id="account-invitations-nav" data-dashboard-view="view-account-invitations" onclick="switchView('view-account-invitations')" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6M16 3v4M13 5h6"/></svg>
+            Operations: Account Invitations
           </button>
           <button type="button" id="admin-activity-nav" data-dashboard-view="view-admin-activity" onclick="switchView('view-admin-activity')" hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg>
@@ -1008,6 +1012,10 @@
           <div class="module-card" data-dashboard-view="view-reporting" onclick="switchView('view-reporting')" style="border-left-color: #107c41;">
             <h3 style="color:#107c41;">Reporting Dashboard</h3>
             <p>Interactive analytics, Summary cards, and comparative charts.</p>
+          </div>
+          <div class="module-card" data-dashboard-view="view-account-invitations" onclick="switchView('view-account-invitations')" hidden>
+            <h3>Operations: Account Invitations</h3>
+            <p>Provision congregation-scoped accounts for Elders, Priests, and Underdeacons.</p>
           </div>
         </div>
       </div>
@@ -1291,17 +1299,6 @@
           <p id="csv-message" style="margin-top: 8px; font-size: 0.8rem;"></p>
           <p id="csv-congregation-message" style="margin-top: 8px; font-size: 0.8rem;" role="status" aria-live="polite"></p>
           <p id="member-update-status" role="status" aria-live="polite" style="margin-top:8px;font-size:0.85rem;"></p>
-          <section id="elder-login-management-panel" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:none;">
-            <h4 style="margin:0 0 6px;">Elder login setup — Overseership 10141</h4>
-            <p class="muted-note">Select eligible Shepherd, Youth, Sunday School, or Senior Citizen Elders with an email address. New accounts receive an invitation to set a password; existing accounts receive a password reset email. No password is shown to the administrator.</p>
-            <p class="muted-note">This creates standard officer logins only. It does not yet grant the separate cross-congregation member-allocation permission.</p>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <button type="button" id="load-elder-login-candidates" class="btn btn-secondary" onclick="loadElderLoginCandidates()">Load eligible Elders</button>
-              <button type="button" id="send-elder-login-emails" class="btn btn-primary" onclick="sendElderLoginEmails()" disabled>Send selected setup/reset emails</button>
-            </div>
-            <div id="elder-login-candidates" style="margin-top:10px;overflow-x:auto;"></div>
-            <p id="elder-login-status" role="status" aria-live="polite" style="margin-top:8px;font-size:0.85rem;"></p>
-          </section>
           <section id="csv-import-report" class="csv-import-report" aria-live="polite" hidden>
             <h4 style="margin:0;">Latest member import report</h4>
             <div class="csv-import-report-counts">
@@ -1958,6 +1955,24 @@
           </div>
         </div>
       </div>
+      <div id="view-account-invitations" class="view-section">
+        <div class="dash-card">
+          <div class="section-heading">
+            <div>
+              <h3 style="margin:0;">Operations: Account Invitations</h3>
+              <p class="muted-note">Invite active Elders, Priests, and Underdeacons in your authorized Overseership. New accounts receive an invitation to set a password; existing accounts receive a password-reset email.</p>
+              <p class="muted-note">Invited users receive standard officer access for their congregation. This does not grant Overseership administrator or cross-congregation permissions.</p>
+              <p id="account-invitation-overseership" class="muted-note" aria-live="polite"></p>
+            </div>
+            <div class="inline-actions">
+              <button type="button" id="load-account-invitation-candidates" class="btn btn-secondary" onclick="loadAccountInvitationCandidates()">Load eligible members</button>
+              <button type="button" id="send-account-invitation-emails" class="btn btn-primary" onclick="sendAccountInvitationEmails()" disabled>Send selected emails</button>
+            </div>
+          </div>
+          <p id="account-invitation-status" role="status" aria-live="polite" style="margin-top:8px;"></p>
+          <div id="account-invitation-candidates" style="margin-top:10px;overflow-x:auto;"></div>
+        </div>
+      </div>
       <div id="view-admin-activity" class="view-section">
         <div class="dash-card">
           <div class="section-heading">
@@ -2153,9 +2168,12 @@
   </div>
 
   <script>
+    const initialAuthHash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    let authActionType = initialAuthHash.get('type') ||
+      new URLSearchParams(window.location.search).get('type') || '';
     const SUPABASE_URL = window.CHURCH_SUPABASE_CONFIG?.url || '';
     const SUPABASE_ANON_KEY = window.CHURCH_SUPABASE_CONFIG?.anonKey || '';
-    const PUBLIC_APP_URL = 'https://stratumcrm.netlify.app';
+    const PUBLIC_APP_URL = 'https://ndoacza.netlify.app';
     const isSupabaseConfigured = Boolean(
       SUPABASE_URL &&
       SUPABASE_ANON_KEY &&
@@ -2325,6 +2343,7 @@
     };
     let isSystemAdmin = false;
     let currentUserIsOverseer = false;
+    let currentUserRoleGroup = '';
     let currentUserIsUnderdeacon = false;
     let currentUserIsPriest = false;
     let isApostle = false;
@@ -2720,6 +2739,7 @@
             'view-tithes',
             'view-hospitals',
             'view-reporting',
+            'view-account-invitations',
             'view-admin-activity',
             'view-overseership-management'
           ]);
@@ -2730,11 +2750,13 @@
           const canOpenSelectedView =
             (selectedView !== 'view-overseership-management' || isSystemAdmin) &&
             (selectedView !== 'view-admin-activity' || isAdministrator()) &&
+            (selectedView !== 'view-account-invitations' || canManageAccountInvitations()) &&
             (!isSundaySchoolOnlyPriest() || ['view-sunday-school', 'view-reporting'].includes(selectedView));
           switchView(canOpenSelectedView ? selectedView : defaultView);
         } else {
           currentUser = null;
           currentUserProfile = null;
+          currentUserRoleGroup = '';
           currentUserIsUnderdeacon = false;
           currentUserIsPriest = false;
           loginWrapper.style.display = 'flex';
@@ -2748,6 +2770,7 @@
         console.error('Auth check error:', err);
         currentUser = null;
         currentUserProfile = null;
+        currentUserRoleGroup = '';
         currentUserIsUnderdeacon = false;
         currentUserIsPriest = false;
         loginWrapper.style.display = 'flex';
@@ -2757,10 +2780,7 @@
     }
 
     function getAuthActionType() {
-      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-      return hashParams.get('type') ||
-        new URLSearchParams(window.location.search).get('type') ||
-        '';
+      return authActionType;
     }
 
     function setAuthPanel(mode) {
@@ -2849,6 +2869,7 @@
         if (error) throw error;
         const { error: signOutError } = await supabaseClient.auth.signOut();
         window.history.replaceState({}, document.title, window.location.pathname);
+        authActionType = '';
         showLoginFields();
         errorEl.style.color = '#176b3a';
         errorEl.textContent = signOutError
@@ -2909,6 +2930,7 @@
 
     async function showSignedInOfficer(profile) {
       currentUserIsOverseer = false;
+      currentUserRoleGroup = '';
       const label = document.getElementById('signed-in-officer-name');
       if (!label) return;
       let text = '';
@@ -2920,10 +2942,12 @@
             .select('role_group, surname')
             .ilike('email', email)
             .eq('is_active', true)
+            .eq('is_deceased', false)
             .limit(2);
           if (error) throw error;
           const member = members?.length === 1 ? members[0] : null;
           if (member) {
+            currentUserRoleGroup = String(member.role_group || '');
             currentUserIsOverseer = ['Overseer', 'Overseer Sister'].includes(member.role_group);
             text = `${member.role_group || ''} ${member.surname || ''}`.trim();
           }
@@ -3012,12 +3036,6 @@
       document.title = `${workspaceName} Executive Dashboard`;
       document.getElementById('user-role-display').innerText =
         `Role: ${isSystemAdmin ? 'System Admin' : isApostle ? 'Apostle (view only)' : currentUserProfile.role} | Workspace: ${workspaceName}`;
-      const elderLoginPanel = document.getElementById('elder-login-management-panel');
-      if (elderLoginPanel) {
-        elderLoginPanel.style.display = isAdministrator() && !isUnderdeacon() && assignedId === '10141'
-          ? 'block'
-          : 'none';
-      }
       const testDataButton = document.getElementById('generate-tenant-test-data');
       if (testDataButton) {
         const overseershipId = String(data.overseership_id);
@@ -3081,6 +3099,9 @@
         await fetchUserProfile();
         await initDashboard();
         if (sundaySchoolOpen && canOpenSundaySchool()) await setupSundaySchool();
+        if (document.getElementById('view-account-invitations').classList.contains('active')) {
+          await loadAccountInvitationCandidates();
+        }
         if (!isUnderdeacon()) subscribeToMemberChanges();
       } catch (error) {
         selector.value = String(currentUserProfile.overseership_id);
@@ -3584,9 +3605,13 @@
         sundaySchoolRequest++;
       }
       const underdeaconViews = new Set(['view-module-select', 'view-testimony', 'view-reporting']);
-      if (isUnderdeacon() && !underdeaconViews.has(viewId)) {
+      if (isUnderdeacon() && !underdeaconViews.has(viewId) &&
+          !(viewId === 'view-account-invitations' && canManageAccountInvitations())) {
         alert('Underdeacons can access only the Testimony module and Testimony reporting.');
         return;
+      }
+      if (viewId === 'view-account-invitations' && !canManageAccountInvitations()) {
+        throw new Error('Authorized Operations officer or administrator access is required to manage account invitations.');
       }
       if (viewId === 'view-admin-activity' && !isAdministrator()) {
         throw new Error('Administrator access is required to view the activity log.');
@@ -3626,6 +3651,13 @@
     function isAdministrator() {
       return Boolean(currentUserProfile) &&
         (isSystemAdmin || String(currentUserProfile.role || '').toLowerCase() === 'admin');
+    }
+
+    function canManageAccountInvitations() {
+      return isAdministrator() ||
+        (Boolean(currentUserProfile) &&
+          currentUserProfile.role === 'officer' &&
+          ['Overseer', 'Evangelist', 'Prophet'].includes(currentUserRoleGroup));
     }
 
     function isUnderdeacon() {
@@ -3862,6 +3894,7 @@
         ]);
       if (isSystemAdmin) permittedViews.add('view-overseership-management');
       if (canOpenSundaySchool()) permittedViews.add('view-sunday-school');
+      if (canManageAccountInvitations()) permittedViews.add('view-account-invitations');
       document.querySelectorAll('[data-dashboard-view]').forEach(element => {
         element.hidden = !permittedViews.has(element.dataset.dashboardView);
       });
@@ -4331,70 +4364,97 @@
       return error?.message || 'Unexpected error.';
     }
 
-    async function loadElderLoginCandidates() {
-      const status = document.getElementById('elder-login-status');
-      const target = document.getElementById('elder-login-candidates');
-      const loadButton = document.getElementById('load-elder-login-candidates');
-      const sendButton = document.getElementById('send-elder-login-emails');
-      status.textContent = 'Loading eligible Elder records...';
+    function getInvitationOverseershipId() {
+      if (isSystemAdmin) {
+        return String(
+          document.getElementById('current-overseership-select')?.value ||
+          currentUserProfile?.overseership_id ||
+          ''
+        );
+      }
+      return String(currentUserProfile?.overseership_id || '');
+    }
+
+    async function loadAccountInvitationCandidates() {
+      const status = document.getElementById('account-invitation-status');
+      const target = document.getElementById('account-invitation-candidates');
+      const loadButton = document.getElementById('load-account-invitation-candidates');
+      const sendButton = document.getElementById('send-account-invitation-emails');
+      const overseershipId = getInvitationOverseershipId();
+      if (!canManageAccountInvitations()) {
+        status.textContent = 'You are not authorized to manage account invitations.';
+        return;
+      }
+      if (!overseershipId) {
+        status.textContent = 'No authorized Overseership is selected.';
+        return;
+      }
+      document.getElementById('account-invitation-overseership').textContent =
+        `Overseership ${overseershipId}`;
+      status.textContent = 'Loading eligible member records...';
       target.innerHTML = '';
       sendButton.disabled = true;
       loadButton.disabled = true;
       try {
         const { data, error } = await supabaseClient.functions.invoke('manage-elder-access', {
-          body: { action: 'list' }
+          body: { action: 'list', overseership_id: overseershipId }
         });
         if (error) throw error;
-        const elders = data?.elders || [];
-        if (!elders.length) {
-          status.textContent = 'No eligible Elder records with email addresses were found in Overseership 10141.';
+        const members = data?.members || [];
+        if (!members.length) {
+          status.textContent = 'No active Elders, Priests, or Underdeacons with valid email addresses were found in this Overseership.';
           return;
         }
-        target.innerHTML = `<table class="data-table"><thead><tr><th>Select</th><th>Elder</th><th>Assignment</th><th>Email</th></tr></thead><tbody>${
-          elders.map(elder => `<tr>
-            <td><input type="checkbox" class="elder-login-choice" value="${escapeHospitalHtml(elder.member_id)}" aria-label="Select ${escapeHospitalHtml(elder.full_name)}"></td>
-            <td>${escapeHospitalHtml(elder.full_name)}</td>
-            <td>${escapeHospitalHtml(elder.assignment_role)}</td>
-            <td>${escapeHospitalHtml(elder.email)}</td>
+        target.innerHTML = `<table class="data-table"><thead><tr><th>Select</th><th>Member</th><th>Role</th><th>Congregation</th><th>Email</th></tr></thead><tbody>${
+          members.map(member => `<tr>
+            <td><input type="checkbox" class="account-invitation-choice" value="${escapeHospitalHtml(member.member_id)}" aria-label="Select ${escapeHospitalHtml(member.full_name)}"></td>
+            <td>${escapeHospitalHtml(member.full_name)}</td>
+            <td>${escapeHospitalHtml(member.role_group)}</td>
+            <td>${escapeHospitalHtml(member.congregation_name)}</td>
+            <td>${escapeHospitalHtml(member.email)}</td>
           </tr>`).join('')
         }</tbody></table>`;
         sendButton.disabled = false;
-        status.textContent = `${elders.length} eligible Elder record(s). Select the people who should receive an email.`;
+        status.textContent = `${members.length} eligible member record(s). Select up to 25 people for each batch.`;
       } catch (error) {
-        status.textContent = `Could not load Elder login records: ${await getEdgeFunctionErrorMessage(error)}`;
+        status.textContent = `Could not load invitation candidates: ${await getEdgeFunctionErrorMessage(error)}`;
       } finally {
         loadButton.disabled = false;
       }
     }
 
-    async function sendElderLoginEmails() {
-      const status = document.getElementById('elder-login-status');
-      const sendButton = document.getElementById('send-elder-login-emails');
-      const memberIds = Array.from(document.querySelectorAll('.elder-login-choice:checked'))
+    async function sendAccountInvitationEmails() {
+      const status = document.getElementById('account-invitation-status');
+      const sendButton = document.getElementById('send-account-invitation-emails');
+      const memberIds = Array.from(document.querySelectorAll('.account-invitation-choice:checked'))
         .map(input => input.value);
       if (!memberIds.length) {
-        status.textContent = 'Select at least one Elder first.';
+        status.textContent = 'Select at least one member first.';
         return;
       }
       if (memberIds.length > 25) {
-        status.textContent = 'Select no more than 25 Elders per email batch.';
+        status.textContent = 'Select no more than 25 members per email batch.';
         return;
       }
-      if (!window.confirm(`Send an invitation or password reset email to ${memberIds.length} selected Elder(s)?`)) return;
+      if (!window.confirm(`Send an invitation or password-reset email to ${memberIds.length} selected member(s)?`)) return;
 
       sendButton.disabled = true;
       status.textContent = 'Provisioning accounts and sending emails...';
       try {
         const { data, error } = await supabaseClient.functions.invoke('manage-elder-access', {
-          body: { action: 'send', member_ids: memberIds }
+          body: {
+            action: 'send',
+            member_ids: memberIds,
+            overseership_id: getInvitationOverseershipId(),
+          }
         });
         if (error) throw error;
         const results = data?.results || [];
         status.textContent = results.map(result =>
-          `${result.full_name} (${result.email}): ${result.status}${result.message ? ` — ${result.message}` : ''}`
+          `${result.full_name} (${result.role_group}, ${result.email}): ${result.status}${result.message ? ` — ${result.message}` : ''}`
         ).join(' | ') || 'The request completed without individual results.';
       } catch (error) {
-        status.textContent = `Could not send setup emails: ${await getEdgeFunctionErrorMessage(error)}`;
+        status.textContent = `Could not send account emails: ${await getEdgeFunctionErrorMessage(error)}`;
       } finally {
         sendButton.disabled = false;
       }
@@ -10128,7 +10188,6 @@
       updateCurrentDate();
       checkAuth();
     });
-  <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
@@ -10136,6 +10195,6 @@
         .catch(err => console.log('Service Worker registration failed:', err));
     });
   }
-  </script>
+</script>
 </body>
 </html>
