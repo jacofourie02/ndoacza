@@ -840,7 +840,8 @@
             </div>
             <div class="form-group">
               <label for="password">Password</label>
-              <input type="password" id="password" autocomplete="current-password" placeholder="••••••••••••" onkeydown="handleLoginKey(event)">
+              <input type="password" id="password" autocomplete="current-password" aria-describedby="login-password-hint" placeholder="••••••••••••" onkeydown="handleLoginKey(event)">
+              <small id="login-password-hint" class="muted-note">10 Character Password</small>
             </div>
             <button id="login-submit-button" onclick="handleLogin()">Sign In to Dashboard</button>
             <button type="button" class="btn btn-secondary" style="width:100%;margin-top:8px;" onclick="showPasswordResetRequest()">Forgot password?</button>
