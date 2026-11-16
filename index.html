@@ -1032,7 +1032,7 @@
       <div id="view-sunday-school" class="view-section">
         <div class="dash-card">
           <h3>Sunday School Attendance</h3>
-          <p class="muted-note">Groups use the child's age on 1 January. After confirmation, update the child's role to Youth in Members.</p>
+          <p class="muted-note">Groups use the child's age on 1 January. After confirmation, use Edit child in Members to update the child's role to Youth.</p>
           <div class="form-grid">
             <div class="form-group">
               <label for="sunday-school-congregation">Congregation</label>
@@ -1208,7 +1208,7 @@
                 <li><strong>Single Sister Family</strong> or <strong>Single Brother Family:</strong> use the correct category for the family head; do not enter spouse details.</li>
                 <li><strong>50/50 Sister Family</strong> or <strong>50/50 Brother Family:</strong> use when the other spouse is not a church member. Do not enter spouse details; only the named adult and recorded children count as souls.</li>
               </ul>
-              <p>A family head can include up to five children in the same row using the matching <code>child_1_...</code> through <code>child_5_...</code> columns. For each child, enter both first name and surname; initials and ID/passport number are optional. Leave every column for an unused child blank. Do not partly fill a child's set of columns. Choose a family type other than <code>Single Member</code> when adding children this way.</p>
+              <p>A family head can include up to five children in the same row using the matching <code>child_1_...</code> through <code>child_5_...</code> columns. For each new child, enter first name, surname, and ID/passport number (6–13 characters); initials are optional. Leave every column for an unused child blank. Do not partly fill a child's set of columns. Choose a family type other than <code>Single Member</code> when adding children this way.</p>
 
               <p><strong>Example — a family head and one child in the same row:</strong></p>
               <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
@@ -1222,7 +1222,7 @@
                   <tr><td style="padding: 5px;"><code>family_type</code></td><td style="padding: 5px;">Family</td></tr>
                   <tr><td style="padding: 5px;"><code>sister_name</code>, <code>sister_id_number</code></td><td style="padding: 5px;">Anna, 8205050000000</td></tr>
                   <tr><td style="padding: 5px;"><code>child_1_first_name</code>, <code>child_1_surname</code></td><td style="padding: 5px;">Lindiwe, Dlamini</td></tr>
-                  <tr><td style="padding: 5px;"><code>child_1_id_number</code></td><td style="padding: 5px;">Leave blank if unknown</td></tr>
+                  <tr><td style="padding: 5px;"><code>child_1_id_number</code></td><td style="padding: 5px;">1201010000000 — the child's own ID/passport number</td></tr>
                   <tr><td style="padding: 5px;"><code>address</code></td><td style="padding: 5px;">12 Main Road</td></tr>
                 </tbody>
               </table>
@@ -2099,6 +2099,7 @@
       <h3 style="margin-top: 0; color:var(--dash-primary);">Edit Member Details</h3>
       <form id="edit-member-form" onsubmit="handleUpdateMember(event)" class="form-grid">
         <input type="hidden" id="edit-member-id">
+        <p id="edit-linked-child-note" class="muted-note" style="grid-column:1/-1;" hidden>Changes to this family member's role are made here. Congregation and family details are managed on the family head.</p>
         <div class="form-group"><label>Member / Officer Role</label><select id="edit-role-group" onchange="toggleHierarchyFields('edit'); checkSisterFields('edit'); populateMemberOfficerOptions('edit');"></select></div>
         <div class="form-group" id="edit-officer-assignment-role-group" style="display:none;">
           <label>Officer Assignment Role</label>
@@ -5084,7 +5085,7 @@
           surname: row.querySelector('.family-child-surname')?.value.trim() || '',
           idNumber,
           dob: extractDOBFromID(idNumber) || row.querySelector('.family-child-dob')?.value || null,
-          roleGroup: row.querySelector('.family-child-role')?.value || 'Child',
+          roleGroup: row.dataset.roleGroup || 'Child',
           isDeceased: row.dataset.isDeceased === 'true'
         };
       });
@@ -5108,19 +5109,14 @@
         const dob = child.dob || child.date_of_birth || extractDOBFromID(idNumber) || '';
         const roleGroup = child.roleGroup || child.role_group || 'Child';
         html += `
-          <div class="family-child-row form-grid" data-child-id="${escapeHospitalHtml(childId)}" data-is-deceased="${child.is_deceased || child.isDeceased ? 'true' : 'false'}" style="grid-column: 1 / -1; background:#fff; padding:10px; border:1px solid var(--dash-border); margin-bottom:8px; border-radius:4px;">
+          <div class="family-child-row form-grid" data-child-id="${escapeHospitalHtml(childId)}" data-role-group="${escapeHospitalHtml(roleGroup)}" data-is-deceased="${child.is_deceased || child.isDeceased ? 'true' : 'false'}" style="grid-column: 1 / -1; background:#fff; padding:10px; border:1px solid var(--dash-border); margin-bottom:8px; border-radius:4px;">
             ${child.is_deceased || child.isDeceased ? '<p class="muted-note" style="grid-column:1/-1;">Deceased — not included in Total Souls.</p>' : ''}
+            ${childId && roleGroup === 'Youth' ? '<p class="muted-note" style="grid-column:1/-1;">Existing Youth record; its role remains unchanged.</p>' : ''}
             <div class="form-group"><label>Child ${i + 1} First Name</label><input type="text" class="family-child-first-name" required placeholder="e.g. Lindiwe" value="${escapeHospitalHtml(firstName)}"></div>
             <div class="form-group"><label>Initials</label><input type="text" class="family-child-initials" placeholder="e.g. L.M." value="${escapeHospitalHtml(initials)}"></div>
             <div class="form-group"><label>Surname</label><input type="text" class="family-child-surname" required placeholder="e.g. Mokoena" value="${escapeHospitalHtml(surname)}"></div>
-            <div class="form-group"><label>ID / Passport</label><input type="text" class="family-child-id-number" minlength="6" maxlength="13" placeholder="e.g. 1201010000000" oninput="autoFillFamilyChildDOB(this)" value="${escapeHospitalHtml(idNumber)}"></div>
+            <div class="form-group"><label>ID / Passport (required for new children)</label><input type="text" class="family-child-id-number" ${childId ? '' : 'required'} minlength="6" maxlength="13" placeholder="e.g. 1201010000000" oninput="autoFillFamilyChildDOB(this)" value="${escapeHospitalHtml(idNumber)}"></div>
             <div class="form-group"><label>Date of Birth</label><input type="date" class="family-child-dob" title="Example: 1 January 2012" value="${escapeHospitalHtml(dob)}"><small class="muted-note">Example: 1 January 2012</small></div>
-            <div class="form-group"><label>Role / Office</label>
-              <select class="family-child-role">
-                <option value="Child" ${roleGroup === 'Child' ? 'selected' : ''}>Child</option>
-                <option value="Youth" ${roleGroup === 'Youth' ? 'selected' : ''}>Youth</option>
-              </select>
-            </div>
           </div>
         `;
       }
@@ -5178,11 +5174,12 @@
       const existingChild = child.childId
         ? cachedMembers.find(member => String(member.member_id) === String(child.childId))
         : null;
+      const preserveYouthAllocation = existingChild?.role_group === 'Youth';
       return {
         ...(existingChild || {}),
         member_id: childId,
         family_main_id: familyHead.member_id,
-        role_group: child.roleGroup || 'Child',
+        role_group: existingChild?.role_group || 'Child',
         first_name: child.firstName,
         initials: child.initials || '',
         surname: child.surname,
@@ -5190,17 +5187,29 @@
         date_of_birth: child.dob,
         address: familyHead.address,
         congregation_id: familyHead.congregation_id,
-        assigned_priest_id: familyHead.assigned_priest_id,
-        assigned_elder_id: familyHead.assigned_elder_id,
-        assigned_overseer_id: familyHead.assigned_overseer_id,
+        assigned_priest_id: preserveYouthAllocation ? existingChild.assigned_priest_id : familyHead.assigned_priest_id,
+        assigned_elder_id: preserveYouthAllocation ? existingChild.assigned_elder_id : familyHead.assigned_elder_id,
+        assigned_overseer_id: preserveYouthAllocation ? existingChild.assigned_overseer_id : familyHead.assigned_overseer_id,
         burial_fund: existingChild?.burial_fund || familyHead.burial_fund || 'None',
         family_type: 'single_member',
         is_family: false,
         family_souls_count: 1,
         sister_is_active: false,
         sister_is_deceased: false,
-        is_active: true
+        is_active: true,
+        is_deceased: existingChild?.is_deceased ?? false,
+        is_placeholder: existingChild?.is_placeholder ?? false
       };
+    }
+
+    function familyChildrenValidationError(children) {
+      if (children.some(child => !child.firstName || !child.surname)) {
+        return 'Each child needs a first name and surname.';
+      }
+      if (children.some(child => !child.childId && (child.idNumber.length < 6 || child.idNumber.length > 13))) {
+        return 'Each new child needs an ID/passport number of 6 to 13 characters.';
+      }
+      return '';
     }
 
     function localDateString(value) {
@@ -5384,7 +5393,11 @@
           ? `<div class="muted-note" style="margin-top:4px;">Children: ${linkedChildren.map(child => {
             const childName = `${child.first_name || ''} ${child.surname || ''}`.trim();
             const deceasedLabel = child.is_deceased ? ' (Deceased)' : '';
-            return `${escapeHospitalHtml(childName)}${deceasedLabel}`;
+            const canEditChild = !child.is_deceased && (!isPriestOnly() || isPriestManagedMember(child));
+            const editChild = canEditChild
+              ? ` <button type="button" class="btn btn-secondary" style="padding:2px 6px;font-size:0.7rem;" data-child-id="${escapeHospitalHtml(child.member_id)}" aria-label="Edit child ${escapeHospitalHtml(childName)}" onclick="openEditModal(this.dataset.childId)">Edit child</button>`
+              : '';
+            return `${escapeHospitalHtml(childName)}${deceasedLabel}${editChild}`;
           }).join(', ')}</div>`
           : '';
         const canManage = !isPriestOnly() || isPriestManagedMember(m);
@@ -5456,9 +5469,10 @@
         formMsg.textContent = 'Enter a whole number of children and complete the details for each child.';
         return;
       }
-      if (familyChildren.some(child => !child.firstName || !child.surname)) {
+      const childError = familyChildrenValidationError(familyChildren);
+      if (childError) {
         formMsg.style.color = 'var(--danger)';
-        formMsg.textContent = 'Each child needs a first name and surname.';
+        formMsg.textContent = childError;
         return;
       }
       const isFamilyUnit = document.getElementById('new-is-family').value === 'family_unit';
@@ -5515,7 +5529,8 @@
           const childPayloads = familyChildren.map(child =>
             buildFamilyChildPayload(child, payload, crypto.randomUUID())
           );
-          const { error } = await supabaseClient.from('members').insert([payload, ...childPayloads]);
+          const { error } = await supabaseClient.from('members')
+            .insert([payload, ...childPayloads], { defaultToNull: false });
           if (error) throw error;
         }
         formMsg.style.color = 'var(--success)';
@@ -5537,7 +5552,15 @@
       const m = cachedMembers.find(x => String(x.member_id) === String(memberId));
       if (!m) return;
       document.getElementById('edit-member-id').value = m.member_id;
-      document.getElementById('edit-role-group').value = m.role_group || '';
+      const linkedChild = Boolean(m.family_main_id);
+      const roleSelect = document.getElementById('edit-role-group');
+      Array.from(roleSelect.options).forEach(option => {
+        option.disabled = linkedChild && !['Child', 'Youth', m.role_group].includes(option.value);
+      });
+      roleSelect.value = m.role_group || '';
+      document.getElementById('edit-linked-child-note').hidden = !linkedChild;
+      document.getElementById('edit-congregation').disabled = linkedChild;
+      document.getElementById('edit-is-family').disabled = linkedChild;
       toggleHierarchyFields('edit');
       document.getElementById('edit-officer-assignment-role').value =
         m.officer_assignment_role || m.priest_type || m.elder_type || '';
@@ -5608,8 +5631,9 @@
         window.alert('Enter a whole number of children and complete the details for each child.');
         return;
       }
-      if (familyChildren.some(child => !child.firstName || !child.surname)) {
-        window.alert('Each child needs a first name and surname.');
+      const childError = familyChildrenValidationError(familyChildren);
+      if (childError) {
+        window.alert(childError);
         return;
       }
       const existingChildrenById = new Map(existingChildren.map(child => [String(child.member_id), child]));
@@ -5635,6 +5659,13 @@
         validateMemberAllocation('edit', roleGroup);
         if (supabaseClient) {
           if (!currentMember) throw new Error('The member record is no longer loaded. Refresh and try again.');
+          if (currentMember.family_main_id && (
+            !['Child', 'Youth', currentMember.role_group].includes(roleGroup) ||
+            familyType !== (currentMember.family_type || (currentMember.is_family ? 'family_unit' : 'single_member')) ||
+            document.getElementById('edit-congregation').value !== currentMember.congregation_id
+          )) {
+            throw new Error('Manage congregation and family details on the family head. A linked child can be changed to Youth.');
+          }
           const parentPayload = {
             ...currentMember,
             member_id: memberId,
@@ -5646,13 +5677,19 @@
             elder_type: roleGroup.includes('Elder')
               ? assignmentRole
               : null,
-            assigned_priest_id: !roleGroup.includes('Elder') && !roleGroup.includes('Priest')
+            assigned_priest_id: currentMember.family_main_id && roleGroup === 'Child'
+              ? currentMember.assigned_priest_id
+              : !roleGroup.includes('Elder') && !roleGroup.includes('Priest')
               ? document.getElementById('edit-assigned-priest').value || null
               : null,
-            assigned_elder_id: roleGroup.includes('Priest')
+            assigned_elder_id: currentMember.family_main_id
+              ? currentMember.assigned_elder_id
+              : roleGroup.includes('Priest')
               ? document.getElementById('edit-assigned-elder').value || null
               : null,
-            assigned_overseer_id: roleGroup.includes('Elder')
+            assigned_overseer_id: currentMember.family_main_id
+              ? currentMember.assigned_overseer_id
+              : roleGroup.includes('Elder')
               ? assignedOverseerId
               : null,
             first_name: document.getElementById('edit-first-name').value.trim(),
@@ -5692,7 +5729,7 @@
             .filter(child => removedChildIds.some(removedId => String(removedId) === String(child.member_id)))
             .map(child => ({ ...child, burial_fund: child.burial_fund || 'None', is_active: false }));
           const { error } = await supabaseClient.from('members')
-            .upsert([parentPayload, ...childPayloads, ...removedChildren], { onConflict: 'member_id' });
+            .upsert([parentPayload, ...childPayloads, ...removedChildren], { onConflict: 'member_id', defaultToNull: false });
           if (error) throw error;
         }
         closeEditModal();
@@ -6838,7 +6875,7 @@
       return normalized;
     }
 
-    function buildCsvMemberPlan(row, rowNumber, knownIdentityNumbers) {
+    function buildCsvMemberPlan(row, rowNumber, knownIdentityNumbers, requireChildIds = true) {
       const roleGroup = String(row.role_group || '').trim();
       if (!ROLES.includes(roleGroup)) {
         throw new Error(`role_group must be one of: ${ROLES.join(', ')}.`);
@@ -6866,7 +6903,8 @@
         if (!child.surname) throw new Error(`child_${childNumber}_surname is required when entering a child.`);
         child.idNumber = validateCsvIdentityNumber(
           child.idNumber,
-          `child_${childNumber}_id_number`
+          `child_${childNumber}_id_number`,
+          requireChildIds
         ) || '';
         return child;
       }).filter(Boolean);
@@ -7117,7 +7155,7 @@
       ].map(normalizeCsvIdentityNumber).filter(Boolean).forEach(identityNumber =>
         knownForThisRow.delete(identityNumber)
       );
-      const plan = buildCsvMemberPlan(updateRow, rowNumber, knownForThisRow);
+      const plan = buildCsvMemberPlan(updateRow, rowNumber, knownForThisRow, false);
       if (plan.childPayloads.length !== existingChildren.length) {
         throw new Error('This update cannot add or remove family children. Use the member editor for family membership changes.');
       }
@@ -7165,9 +7203,16 @@
           member_id: existingChild.member_id,
           member_id_check: existingChild.member_id,
           role_group: childRole,
+          assigned_priest_id: existingChild.role_group === 'Youth'
+            ? existingChild.assigned_priest_id : childPayload.assigned_priest_id,
+          assigned_elder_id: existingChild.role_group === 'Youth'
+            ? existingChild.assigned_elder_id : childPayload.assigned_elder_id,
+          assigned_overseer_id: existingChild.role_group === 'Youth'
+            ? existingChild.assigned_overseer_id : childPayload.assigned_overseer_id,
           date_of_birth: childDateOfBirth,
           is_active: existingChild.is_active,
-          is_deceased: existingChild.is_deceased
+          is_deceased: existingChild.is_deceased,
+          is_placeholder: existingChild.is_placeholder
         };
       });
       const updatedIdentityNumbers = [
@@ -7524,7 +7569,7 @@
             try {
               const { error } = await supabaseClient
                 .from('members')
-                .insert([plan.payload, ...plan.childPayloads]);
+                .insert([plan.payload, ...plan.childPayloads], { defaultToNull: false });
               return { plan, error };
             } catch (error) {
               return {
