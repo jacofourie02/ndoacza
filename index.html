@@ -897,6 +897,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1M16 5.5a3 3 0 0 1 0 5.8M18 14a5 5 0 0 1 3 4.5V20"/></svg>
             Members
           </button>
+          <button type="button" data-dashboard-view="view-priest-allocation" onclick="switchView('view-priest-allocation')" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20v-1a6 6 0 0 1 12 0v1M18 8v6M15 11h6"/></svg>
+            Allocate Members
+          </button>
           <button type="button" data-dashboard-view="view-activity-attendance" onclick="switchView('view-activity-attendance')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h17M8 15l3-4 3 2 5-7"/></svg>
             Attendance
@@ -984,6 +988,10 @@
           <div class="module-card" data-dashboard-view="view-member-capture" onclick="switchView('view-member-capture')">
             <h3>Member Capture / Edit</h3>
             <p>Manage membership directory, family units, and hierarchy records.</p>
+          </div>
+          <div class="module-card" data-dashboard-view="view-priest-allocation" onclick="switchView('view-priest-allocation')" hidden>
+            <h3>Allocate Members</h3>
+            <p>Allocate unassigned members in your served congregations to yourself.</p>
           </div>
           <div class="module-card" data-dashboard-view="view-activity-attendance" onclick="switchView('view-activity-attendance')">
             <h3>Activity Attendance</h3>
@@ -1955,6 +1963,25 @@
           </div>
         </div>
       </div>
+      <div id="view-priest-allocation" class="view-section">
+        <div class="dash-card">
+          <div class="section-heading">
+            <div>
+              <h3 style="margin:0;">Allocate Members to Me</h3>
+              <p class="muted-note">Unallocated members in your home and currently assigned congregations are listed here. Linked active family members are allocated together. Youth records require a Youth assignment.</p>
+              <p class="muted-note">A family with conflicting allocations must be reviewed by an administrator. Members already allocated to another officer are not available here.</p>
+            </div>
+            <button type="button" id="priest-allocation-refresh" class="btn btn-secondary" onclick="loadPriestAllocationCandidates()">Refresh</button>
+          </div>
+          <p id="priest-allocation-status" role="status" aria-live="polite"></p>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Congregation</th><th>Member</th><th>Role</th><th>Linked children</th><th>Action</th></tr></thead>
+              <tbody id="priest-allocation-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       <div id="view-account-invitations" class="view-section">
         <div class="dash-card">
           <div class="section-heading">
@@ -2732,6 +2759,7 @@
           const allowedViews = new Set([
             'view-module-select',
             'view-member-capture',
+            'view-priest-allocation',
             'view-activity-attendance',
             'view-sunday-school',
             'view-testimony',
@@ -2751,7 +2779,8 @@
             (selectedView !== 'view-overseership-management' || isSystemAdmin) &&
             (selectedView !== 'view-admin-activity' || isAdministrator()) &&
             (selectedView !== 'view-account-invitations' || canManageAccountInvitations()) &&
-            (!isSundaySchoolOnlyPriest() || ['view-sunday-school', 'view-reporting'].includes(selectedView));
+            (selectedView !== 'view-priest-allocation' || currentUserIsPriest) &&
+            (!isSundaySchoolOnlyPriest() || ['view-sunday-school', 'view-reporting', 'view-priest-allocation'].includes(selectedView));
           switchView(canOpenSelectedView ? selectedView : defaultView);
         } else {
           currentUser = null;
@@ -3591,8 +3620,8 @@
     }
 
     function switchView(viewId) {
-      if (isSundaySchoolOnlyPriest() && !['view-sunday-school', 'view-reporting'].includes(viewId)) {
-        alert('Sunday School Priests can access only Sunday School and its reporting.');
+      if (isSundaySchoolOnlyPriest() && !['view-sunday-school', 'view-reporting', 'view-priest-allocation'].includes(viewId)) {
+        alert('Sunday School Priests can access Sunday School, its reporting, and member allocation.');
         return;
       }
       if (viewId !== 'view-sunday-school' && document.getElementById('view-sunday-school').classList.contains('active')) {
@@ -3612,6 +3641,9 @@
       }
       if (viewId === 'view-account-invitations' && !canManageAccountInvitations()) {
         throw new Error('Authorized Operations officer or administrator access is required to manage account invitations.');
+      }
+      if (viewId === 'view-priest-allocation' && !currentUserIsPriest) {
+        throw new Error('Priest access is required to allocate members.');
       }
       if (viewId === 'view-admin-activity' && !isAdministrator()) {
         throw new Error('Administrator access is required to view the activity log.');
@@ -3639,6 +3671,7 @@
         loadAttendanceHistory();
       }
       if (viewId === 'view-sunday-school') setupSundaySchool();
+      if (viewId === 'view-priest-allocation') loadPriestAllocationCandidates();
       if (viewId === 'view-testimony') setupTestimonyModule();
       if (viewId === 'view-prophetic') setupPropheticModule();
       if (viewId === 'view-tithes') setupTithesModule();
@@ -3684,6 +3717,89 @@
 
     function isSundaySchoolOnlyPriest() {
       return isPriestOnly() && canOpenSundaySchool();
+    }
+
+    let priestAllocationBusy = false;
+
+    async function loadPriestAllocationCandidates(message = '') {
+      if (priestAllocationBusy) return;
+      priestAllocationBusy = true;
+      const refresh = document.getElementById('priest-allocation-refresh');
+      const status = document.getElementById('priest-allocation-status');
+      const body = document.getElementById('priest-allocation-body');
+      refresh.disabled = true;
+      body.replaceChildren();
+      status.textContent = 'Loading unallocated members...';
+      try {
+        const { data, error } = await supabaseClient.rpc('list_priest_unallocated_members');
+        if (error) throw error;
+        const candidates = data || [];
+        for (const candidate of candidates) {
+          const row = document.createElement('tr');
+          const fields = [
+            candidate.congregation_name,
+            `${candidate.first_name || ''} ${candidate.surname || ''}`.trim(),
+            candidate.role_group,
+            candidate.family_children
+          ];
+          for (const value of fields) {
+            const cell = document.createElement('td');
+            cell.textContent = value == null ? '' : String(value);
+            row.appendChild(cell);
+          }
+          const action = document.createElement('td');
+          if (candidate.block_reason) {
+            action.textContent = candidate.block_reason;
+          } else {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn btn-primary';
+            button.textContent = 'Allocate to me';
+            button.addEventListener('click', () => claimPriestMember(candidate));
+            action.appendChild(button);
+          }
+          row.appendChild(action);
+          body.appendChild(row);
+        }
+        status.textContent = message || (candidates.length
+          ? `${candidates.length} unallocated member or family record(s).`
+          : 'No unallocated members found in your served congregations.');
+      } catch (error) {
+        console.error('Could not load unallocated members:', error);
+        status.textContent = error.message || 'Could not load unallocated members.';
+      } finally {
+        priestAllocationBusy = false;
+        refresh.disabled = false;
+      }
+    }
+
+    async function claimPriestMember(candidate) {
+      if (priestAllocationBusy) return;
+      const name = `${candidate.first_name || ''} ${candidate.surname || ''}`.trim();
+      if (!window.confirm(`Allocate ${name} and any linked active children to yourself?`)) return;
+      priestAllocationBusy = true;
+      const refresh = document.getElementById('priest-allocation-refresh');
+      const status = document.getElementById('priest-allocation-status');
+      const body = document.getElementById('priest-allocation-body');
+      refresh.disabled = true;
+      body.querySelectorAll('button').forEach(button => { button.disabled = true; });
+      status.textContent = 'Allocating member...';
+      try {
+        const { error } = await supabaseClient.rpc('claim_priest_unallocated_member', {
+          target_id: candidate.member_id
+        });
+        if (error) throw error;
+        await loadDashboardData();
+        priestAllocationBusy = false;
+        await loadPriestAllocationCandidates(`${name} was allocated to you.`);
+      } catch (error) {
+        console.error('Could not allocate member:', error);
+        status.textContent = error.message || 'Could not allocate member. Refresh the list and try again.';
+        body.querySelectorAll('button').forEach(button => { button.disabled = false; });
+      } finally {
+        priestAllocationBusy = false;
+        refresh.disabled = false;
+      }
     }
 
     const SUNDAY_SCHOOL_GROUPS = [
@@ -3895,6 +4011,7 @@
       if (isSystemAdmin) permittedViews.add('view-overseership-management');
       if (canOpenSundaySchool()) permittedViews.add('view-sunday-school');
       if (canManageAccountInvitations()) permittedViews.add('view-account-invitations');
+      if (currentUserIsPriest) permittedViews.add('view-priest-allocation');
       document.querySelectorAll('[data-dashboard-view]').forEach(element => {
         element.hidden = !permittedViews.has(element.dataset.dashboardView);
       });
