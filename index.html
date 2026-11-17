@@ -657,6 +657,8 @@
       background: #f7f9fb;
     }
     .muted-note { font-size: 0.8rem; color: var(--dash-text-muted); margin: 4px 0; }
+    .apostle-link { background: none; border: 0; padding: 0; font: inherit; color: var(--dash-primary); text-decoration: underline; cursor: pointer; }
+    .apostle-tab[aria-selected="true"] { background: var(--dash-primary); }
     .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
     .inline-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
@@ -890,6 +892,10 @@
 
         <p class="nav-label">Workspace</p>
         <nav class="dashboard-nav" aria-label="Management modules">
+          <button type="button" data-dashboard-view="view-apostleship" onclick="switchView('view-apostleship')" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h17M8 15v-4M12 15V8M16 15v-6"/></svg>
+            Apostleship Dashboard
+          </button>
           <button type="button" data-dashboard-view="view-module-select" onclick="switchView('view-module-select')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             Overview
@@ -986,6 +992,10 @@
           <p class="muted-note">Select a module below to drill through operational data and reporting views.</p>
         </div>
         <div class="module-grid">
+          <div class="module-card" data-dashboard-view="view-apostleship" onclick="switchView('view-apostleship')" hidden>
+            <h3>Apostleship Dashboard</h3>
+            <p>Executive totals for all Overseerships: souls, officers, tithes and Prophetic families.</p>
+          </div>
           <div class="module-card" data-dashboard-view="view-member-capture" onclick="switchView('view-member-capture')">
             <h3>Member Capture / Edit</h3>
             <p>Manage membership directory, family units, and hierarchy records.</p>
@@ -1983,6 +1993,51 @@
           </div>
         </div>
       </div>
+      <div id="view-apostleship" class="view-section">
+        <div class="dash-card">
+          <div class="section-heading">
+            <div>
+              <h3 style="margin:0;color:var(--dash-primary);">Apostleship 100 Executive Dashboard</h3>
+              <p class="muted-note">Reporting for all Overseerships. Select an Overseership or one of its figures to drill down by congregation.</p>
+            </div>
+            <div class="inline-actions">
+              <button type="button" class="btn btn-secondary" onclick="setApostlePeriod('month')">This month</button>
+              <button type="button" class="btn btn-secondary" onclick="setApostlePeriod('year')">Year to date</button>
+              <button type="button" class="btn btn-secondary" onclick="loadApostleDashboard()">Refresh</button>
+            </div>
+          </div>
+          <div class="slicer-toolbar">
+            <h4>Period for tithes and Prophetic families</h4>
+            <div class="inline-actions">
+              <div class="form-group"><label for="apostle-start-date">Start date</label><input type="date" id="apostle-start-date" onchange="loadApostleDashboard()"></div>
+              <div class="form-group"><label for="apostle-end-date">End date</label><input type="date" id="apostle-end-date" onchange="loadApostleDashboard()"></div>
+            </div>
+            <p class="muted-note" style="margin:8px 0 0;">Souls and officers are the current totals. Prophetic families are families with a recorded visit in the period, each counted once.</p>
+          </div>
+          <p id="apostle-status" class="muted-note" role="status" aria-live="polite"></p>
+          <div id="apostle-summary" hidden>
+            <div class="grid-stats" id="apostle-kpis"></div>
+            <h4>Officers by role</h4>
+            <div class="table-container"><table>
+              <thead><tr><th>Role</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Officer Sisters</th></tr></thead>
+              <tbody id="apostle-officer-body"></tbody>
+            </table></div>
+            <h4>By Overseership</h4>
+            <div class="table-container"><table>
+              <thead><tr><th>Overseership</th><th style="text-align:right;">Souls</th><th style="text-align:right;">Children</th><th style="text-align:right;">Youth</th><th style="text-align:right;">Members</th><th style="text-align:right;">Senior Citizens</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Tithes</th><th style="text-align:right;">Prophetic families</th><th style="text-align:right;">Prophetic souls</th></tr></thead>
+              <tbody id="apostle-overseership-body"></tbody>
+            </table></div>
+            <div id="apostle-drill" class="dash-card" hidden style="margin-top:16px;">
+              <div class="section-heading">
+                <h4 id="apostle-drill-title" style="margin:0;"></h4>
+                <button type="button" class="btn btn-secondary" onclick="closeApostleDrill()">Close</button>
+              </div>
+              <div class="inline-actions" id="apostle-drill-tabs" role="tablist" aria-label="Section"></div>
+              <div class="table-container" style="margin-top:10px;"><table id="apostle-drill-table"></table></div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="view-account-invitations" class="view-section">
         <div class="dash-card">
           <div class="section-heading">
@@ -2771,14 +2826,17 @@
             'view-reporting',
             'view-account-invitations',
             'view-admin-activity',
-            'view-overseership-management'
+            'view-overseership-management',
+            'view-apostleship'
           ]);
-          const defaultView = isSundaySchoolOnlyPriest() ? 'view-sunday-school' : (isUnderdeacon() ? 'view-module-select' : 'view-member-capture');
+          const defaultView = isApostle ? 'view-apostleship' : isSundaySchoolOnlyPriest() ? 'view-sunday-school' : (isUnderdeacon() ? 'view-module-select' : 'view-member-capture');
           const selectedView = allowedViews.has(requestedView)
             ? requestedView
             : defaultView;
           const canOpenSelectedView =
             (selectedView !== 'view-overseership-management' || isSystemAdmin) &&
+            (selectedView !== 'view-apostleship' || canViewApostleDashboard()) &&
+            (!isApostle || selectedView === 'view-apostleship') &&
             (selectedView !== 'view-admin-activity' || isAdministrator()) &&
             (selectedView !== 'view-account-invitations' || canManageAccountInvitations()) &&
             (selectedView !== 'view-priest-allocation' || currentUserIsPriest || isSystemAdmin) &&
@@ -3061,7 +3119,7 @@
       }).join('');
       selector.value = String(data.overseership_id);
       selector.disabled = !canViewAllOverseerships || isUnderdeacon();
-      document.getElementById('admin-header-overseership-picker').hidden = isUnderdeacon();
+      document.getElementById('admin-header-overseership-picker').hidden = isUnderdeacon() || isApostle;
       const workspaceName = `Overseership ${assignedId}`;
       document.getElementById('app-title').textContent = workspaceName;
       document.title = `${workspaceName} Executive Dashboard`;
@@ -3641,6 +3699,13 @@
         alert('Underdeacons can access only the Testimony module and Testimony reporting.');
         return;
       }
+      if (viewId === 'view-apostleship' && !canViewApostleDashboard()) {
+        throw new Error('Apostle or System Admin access is required to view the Apostleship dashboard.');
+      }
+      if (isApostle && viewId !== 'view-apostleship') {
+        alert('The Apostle can access the Apostleship dashboard only.');
+        return;
+      }
       if (viewId === 'view-account-invitations' && !canManageAccountInvitations()) {
         throw new Error('Authorized Operations officer or administrator access is required to manage account invitations.');
       }
@@ -3674,6 +3739,7 @@
       }
       if (viewId === 'view-sunday-school') setupSundaySchool();
       if (viewId === 'view-priest-allocation') loadPriestAllocationCandidates();
+      if (viewId === 'view-apostleship') openApostleDashboard();
       if (viewId === 'view-testimony') setupTestimonyModule();
       if (viewId === 'view-prophetic') setupPropheticModule();
       if (viewId === 'view-tithes') setupTithesModule();
@@ -4086,10 +4152,204 @@
       return { memberIds, congregationIds };
     }
 
+    const APOSTLE_OFFICER_ROLES = ['Overseer', 'Evangelist', 'Prophet', 'Elder', 'Priest', 'Underdeacon'];
+    const APOSTLE_SECTIONS = [
+      { id: 'souls', label: 'Souls' },
+      { id: 'officers', label: 'Officers' },
+      { id: 'tithes', label: 'Tithes' },
+      { id: 'prophetic', label: 'Prophetic' }
+    ];
+    let apostleReport = null;
+    let apostleDrill = null;
+    let apostleLoadRequestId = 0;
+
+    function canViewApostleDashboard() {
+      return isApostle || isSystemAdmin;
+    }
+
+    function sumApostleRows(rows) {
+      const totals = {
+        souls: 0, children: 0, youth: 0, seniorCitizens: 0, tithes: 0,
+        propheticFamilies: 0, propheticSouls: 0, officerCount: 0, officers: {}
+      };
+      APOSTLE_OFFICER_ROLES.forEach(role => { totals.officers[role] = { brothers: 0, sisters: 0 }; });
+      rows.forEach(row => {
+        totals.souls += Number(row.souls) || 0;
+        totals.children += Number(row.children) || 0;
+        totals.youth += Number(row.youth) || 0;
+        totals.seniorCitizens += Number(row.senior_citizens) || 0;
+        totals.tithes += Number(row.tithes) || 0;
+        totals.propheticFamilies += Number(row.prophetic_families) || 0;
+        totals.propheticSouls += Number(row.prophetic_souls) || 0;
+        APOSTLE_OFFICER_ROLES.forEach(role => {
+          totals.officers[role].brothers += Number(row.officers?.[role]) || 0;
+          totals.officers[role].sisters += Number(row.officers?.[`${role} Sister`]) || 0;
+        });
+      });
+      totals.members = Math.max(0, totals.souls - totals.children - totals.youth - totals.seniorCitizens);
+      totals.officerCount = APOSTLE_OFFICER_ROLES.reduce((sum, role) => sum + totals.officers[role].brothers, 0);
+      return totals;
+    }
+
+    function groupApostleRowsByOverseership(report) {
+      const groups = new Map((report.overseerships || []).map(item => [String(item.overseership_id), {
+        id: String(item.overseership_id),
+        name: item.overseership_name || `Overseership ${item.overseership_id}`,
+        rows: []
+      }]));
+      (report.congregations || []).forEach(row => {
+        const id = String(row.overseership_id || '');
+        if (!groups.has(id)) groups.set(id, { id, name: id ? `Overseership ${id}` : 'No Overseership', rows: [] });
+        groups.get(id).rows.push(row);
+      });
+      return Array.from(groups.values());
+    }
+
+    function setApostlePeriod(kind) {
+      const today = localDateString();
+      if (kind === 'year') {
+        document.getElementById('apostle-start-date').value = `${today.slice(0, 4)}-01-01`;
+        document.getElementById('apostle-end-date').value = today;
+      } else {
+        const range = getReportMonthWindow(today.slice(0, 7));
+        document.getElementById('apostle-start-date').value = range.start;
+        document.getElementById('apostle-end-date').value = range.end;
+      }
+      return loadApostleDashboard();
+    }
+
+    function apostleCell(value, overseershipId, section, formatted) {
+      return `<td style="text-align:right;"><button type="button" class="apostle-link" onclick="openApostleDrill('${escapeHospitalHtml(overseershipId)}','${section}')">${escapeHospitalHtml(formatted ?? String(value))}</button></td>`;
+    }
+
+    function renderApostleDashboard() {
+      if (!apostleReport) return;
+      const groups = groupApostleRowsByOverseership(apostleReport);
+      const totals = sumApostleRows(apostleReport.congregations || []);
+      const cards = [
+        ['Total souls', totals.souls], ['Children', totals.children], ['Youth', totals.youth],
+        ['Members', totals.members], ['Senior citizens', totals.seniorCitizens],
+        ['Officers', totals.officerCount], ['Tithes', zarFormatterFull.format(totals.tithes)],
+        ['Prophetic families', totals.propheticFamilies], ['Prophetic souls', totals.propheticSouls]
+      ];
+      document.getElementById('apostle-kpis').innerHTML = cards.map(([title, value]) =>
+        `<div class="kpi-card"><h3 class="kpi-title">${escapeHospitalHtml(title)}</h3><p class="kpi-value">${escapeHospitalHtml(String(value))}</p></div>`
+      ).join('');
+      document.getElementById('apostle-officer-body').innerHTML = APOSTLE_OFFICER_ROLES.map(role =>
+        `<tr><td>${escapeHospitalHtml(role)}</td><td style="text-align:right;">${totals.officers[role].brothers}</td><td style="text-align:right;">${totals.officers[role].sisters}</td></tr>`
+      ).join('');
+      document.getElementById('apostle-overseership-body').innerHTML = groups.length
+        ? groups.map(group => {
+          const sums = sumApostleRows(group.rows);
+          return `<tr><td><button type="button" class="apostle-link" onclick="openApostleDrill('${escapeHospitalHtml(group.id)}','souls')">${escapeHospitalHtml(group.name)}</button></td>` +
+            apostleCell(sums.souls, group.id, 'souls') +
+            `<td style="text-align:right;">${sums.children}</td><td style="text-align:right;">${sums.youth}</td><td style="text-align:right;">${sums.members}</td><td style="text-align:right;">${sums.seniorCitizens}</td>` +
+            apostleCell(sums.officerCount, group.id, 'officers') +
+            apostleCell(sums.tithes, group.id, 'tithes', zarFormatterFull.format(sums.tithes)) +
+            apostleCell(sums.propheticFamilies, group.id, 'prophetic') +
+            `<td style="text-align:right;">${sums.propheticSouls}</td></tr>`;
+        }).join('')
+        : '<tr><td colspan="10" class="muted-note">No Overseerships found.</td></tr>';
+      renderApostleDrill(groups);
+    }
+
+    function openApostleDrill(overseershipId, section) {
+      apostleDrill = { overseershipId: String(overseershipId), section };
+      renderApostleDrill(groupApostleRowsByOverseership(apostleReport));
+      document.getElementById('apostle-drill').scrollIntoView({ block: 'nearest' });
+    }
+
+    function closeApostleDrill() {
+      apostleDrill = null;
+      renderApostleDrill([]);
+    }
+
+    function renderApostleDrill(groups) {
+      const panel = document.getElementById('apostle-drill');
+      const group = apostleDrill && groups.find(item => item.id === apostleDrill.overseershipId);
+      panel.hidden = !group;
+      if (!group) return;
+      const section = apostleDrill.section;
+      document.getElementById('apostle-drill-title').textContent = `${group.name}: ${APOSTLE_SECTIONS.find(item => item.id === section).label} by congregation`;
+      document.getElementById('apostle-drill-tabs').innerHTML = APOSTLE_SECTIONS.map(item =>
+        `<button type="button" class="btn btn-secondary apostle-tab" role="tab" aria-selected="${item.id === section}" onclick="openApostleDrill('${escapeHospitalHtml(group.id)}','${item.id}')">${escapeHospitalHtml(item.label)}</button>`
+      ).join('');
+      const th = (text, right = true) => `<th${right ? ' style="text-align:right;"' : ''}>${escapeHospitalHtml(text)}</th>`;
+      const num = value => `<td style="text-align:right;">${escapeHospitalHtml(String(value))}</td>`;
+      const name = row => escapeHospitalHtml(row.is_main ? 'Overseership Main' : row.congregation_name || row.congregation_id);
+      let head;
+      let body;
+      let foot;
+      if (section === 'officers') {
+        head = th('Congregation', false) + APOSTLE_OFFICER_ROLES.map(role => th(role)).join('') + th('Officer Sisters');
+        const line = (label, sums) => `<td>${label}</td>` +
+          APOSTLE_OFFICER_ROLES.map(role => num(sums.officers[role].brothers)).join('') +
+          num(APOSTLE_OFFICER_ROLES.reduce((sum, role) => sum + sums.officers[role].sisters, 0));
+        body = group.rows.map(row => `<tr>${line(name(row), sumApostleRows([row]))}</tr>`).join('');
+        foot = `<tr>${line('<strong>Total</strong>', sumApostleRows(group.rows))}</tr>`;
+      } else {
+        const columns = {
+          souls: [['Souls', r => r.souls], ['Children', r => r.children], ['Youth', r => r.youth],
+            ['Members', r => Math.max(0, r.souls - r.children - r.youth - r.senior_citizens)],
+            ['Senior Citizens', r => r.senior_citizens]],
+          tithes: [['Tithes', r => zarFormatterFull.format(Number(r.tithes) || 0)]],
+          prophetic: [['Prophetic families', r => r.prophetic_families], ['Prophetic souls', r => r.prophetic_souls]]
+        }[section];
+        head = th('Congregation', false) + columns.map(([title]) => th(title)).join('');
+        body = group.rows.map(row => `<tr><td>${name(row)}</td>${columns.map(([, get]) => num(get(row))).join('')}</tr>`).join('');
+        const sums = sumApostleRows(group.rows);
+        const totalRow = {
+          souls: sums.souls, children: sums.children, youth: sums.youth, senior_citizens: sums.seniorCitizens,
+          tithes: sums.tithes, prophetic_families: sums.propheticFamilies, prophetic_souls: sums.propheticSouls
+        };
+        foot = `<tr><td><strong>Total</strong></td>${columns.map(([, get]) => num(get(totalRow))).join('')}</tr>`;
+      }
+      document.getElementById('apostle-drill-table').innerHTML =
+        `<thead><tr>${head}</tr></thead><tbody>${body || '<tr><td class="muted-note">No congregations.</td></tr>'}</tbody><tfoot>${foot}</tfoot>`;
+    }
+
+    async function loadApostleDashboard() {
+      if (!canViewApostleDashboard()) return;
+      const requestId = ++apostleLoadRequestId;
+      const start = document.getElementById('apostle-start-date').value;
+      const end = document.getElementById('apostle-end-date').value;
+      const status = document.getElementById('apostle-status');
+      const summary = document.getElementById('apostle-summary');
+      if (!start || !end || start > end) {
+        status.textContent = 'Choose a valid date range (start date must not be after end date).';
+        return;
+      }
+      status.textContent = 'Loading Apostleship totals...';
+      try {
+        const { data, error } = await supabaseClient.rpc('apostle_executive_report', { p_start: start, p_end: end });
+        if (error) throw error;
+        if (requestId !== apostleLoadRequestId) return;
+        if (!data) throw new Error('The database did not return report data.');
+        apostleReport = data;
+        summary.hidden = false;
+        status.textContent = `Tithes and Prophetic families for ${start} to ${end}.`;
+        renderApostleDashboard();
+      } catch (error) {
+        if (requestId !== apostleLoadRequestId) return;
+        console.error('Could not load the Apostleship dashboard:', error);
+        summary.hidden = true;
+        status.textContent = `Could not load the Apostleship dashboard: ${error.message || 'Unexpected error.'} Apply the Apostleship executive report migration.`;
+      }
+    }
+
+    function openApostleDashboard() {
+      apostleDrill = null;
+      const hasPeriod = document.getElementById('apostle-start-date').value &&
+        document.getElementById('apostle-end-date').value;
+      return hasPeriod ? loadApostleDashboard() : setApostlePeriod('month');
+    }
+
     function configureDashboardRoleAccess() {
       const underdeacon = isUnderdeacon();
       const sundaySchoolOnly = isSundaySchoolOnlyPriest();
-      const permittedViews = new Set(sundaySchoolOnly
+      const permittedViews = new Set(isApostle
+        ? ['view-apostleship']
+        : sundaySchoolOnly
         ? ['view-sunday-school', 'view-reporting']
         : underdeacon
         ? ['view-module-select', 'view-testimony', 'view-reporting']
@@ -4105,6 +4365,7 @@
           'view-admin-activity'
         ]);
       if (isSystemAdmin) permittedViews.add('view-overseership-management');
+      if (isSystemAdmin) permittedViews.add('view-apostleship');
       if (canOpenSundaySchool()) permittedViews.add('view-sunday-school');
       if (canManageAccountInvitations()) permittedViews.add('view-account-invitations');
       if (currentUserIsPriest || isSystemAdmin) permittedViews.add('view-priest-allocation');
