@@ -892,6 +892,10 @@
 
         <p class="nav-label">Workspace</p>
         <nav class="dashboard-nav" aria-label="Management modules">
+          <button type="button" data-dashboard-view="view-my-information" onclick="switchView('view-my-information')" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M5 20v-1a7 7 0 0 1 14 0v1"/></svg>
+            My Information
+          </button>
           <button type="button" data-dashboard-view="view-apostleship" onclick="switchView('view-apostleship')" hidden>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h17M8 15v-4M12 15V8M16 15v-6"/></svg>
             Apostleship Dashboard
@@ -986,6 +990,39 @@
       <div id="error-message" class="dash-card" style="display: none; background: #fde7e9; color: var(--danger);"></div>
 
       <!-- MAIN MODULE SELECTION SCREEN -->
+      <div id="view-my-information" class="view-section">
+        <div class="dash-card">
+          <div class="section-heading">
+            <div>
+              <h3 style="margin:0;">My Information</h3>
+              <p class="muted-note">Update your personal details and existing active family details. Contact an administrator to change IDs, email addresses, roles, allocations or family membership.</p>
+            </div>
+            <button type="button" id="my-info-reload" class="btn btn-secondary" onclick="loadMyInformation()">Reload</button>
+          </div>
+          <p id="my-info-status" role="status" aria-live="polite"></p>
+          <form id="my-info-form" onsubmit="saveMyInformation(event)" hidden>
+            <h4>My details</h4>
+            <div class="form-grid">
+              <div class="form-group"><label for="my-info-first">First name</label><input id="my-info-first" required></div>
+              <div class="form-group"><label for="my-info-initials">Initials</label><input id="my-info-initials"></div>
+              <div class="form-group"><label for="my-info-surname">Surname</label><input id="my-info-surname" required></div>
+              <div class="form-group"><label for="my-info-dob">Date of birth</label><input id="my-info-dob" type="date"><small class="muted-note">Dates derived from an ID are administrator-managed.</small></div>
+              <div class="form-group"><label for="my-info-contact">Contact number</label><input id="my-info-contact" type="tel"></div>
+              <div class="form-group"><label for="my-info-address">Address</label><input id="my-info-address"></div>
+            </div>
+            <div id="my-info-sister" hidden>
+              <h4>Sister's details</h4>
+              <div class="form-grid">
+                <div class="form-group"><label for="my-info-sister-name">Name</label><input id="my-info-sister-name"></div>
+                <div class="form-group"><label for="my-info-sister-contact">Contact number</label><input id="my-info-sister-contact" type="tel"></div>
+              </div>
+            </div>
+            <h4>Linked children</h4>
+            <div id="my-info-children"></div>
+            <button id="my-info-save" type="submit" class="btn">Save changes</button>
+          </form>
+        </div>
+      </div>
       <div id="view-module-select" class="view-section active">
         <div style="margin-bottom: 16px;">
           <h2 style="margin:0; font-size:1.3rem;">Report Pages & Management Modules</h2>
@@ -1042,7 +1079,7 @@
       <div id="view-sunday-school" class="view-section">
         <div class="dash-card">
           <h3>Sunday School Attendance</h3>
-          <p class="muted-note">Groups use the child's age on 1 January. After confirmation, use Edit child in Members to update the child's role to Youth.</p>
+          <p class="muted-note">Groups use the child's age on 1 January. Contact an administrator about role changes after confirmation.</p>
           <div class="form-grid">
             <div class="form-group">
               <label for="sunday-school-congregation">Congregation</label>
@@ -2017,6 +2054,19 @@
           <p id="apostle-status" class="muted-note" role="status" aria-live="polite"></p>
           <div id="apostle-summary" hidden>
             <div class="grid-stats" id="apostle-kpis"></div>
+            <div class="chart-container" style="margin-top:16px;">
+              <h4 style="margin:0 0 8px;">Tithes over time</h4>
+              <p class="muted-note">Calendar-month totals for all Overseerships within the selected dates. The first and last months may be partial; choose a longer period to see a trend.</p>
+              <p id="apostle-tithe-chart-status" class="muted-note" role="status" aria-live="polite"></p>
+              <div id="apostle-tithe-chart-area" hidden style="height:300px;"><canvas id="apostle-tithe-chart" role="img" aria-label="Monthly tithes for the selected period"></canvas></div>
+              <details id="apostle-tithe-chart-table" hidden>
+                <summary>View monthly amounts</summary>
+                <div class="table-container"><table>
+                  <thead><tr><th>Month</th><th style="text-align:right;">Tithes</th></tr></thead>
+                  <tbody id="apostle-tithe-chart-body"></tbody>
+                </table></div>
+              </details>
+            </div>
             <h4>Officers by role</h4>
             <div class="table-container"><table>
               <thead><tr><th>Role</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Officer Sisters</th></tr></thead>
@@ -2026,6 +2076,7 @@
             <div class="table-container"><table>
               <thead><tr><th>Overseership</th><th style="text-align:right;">Souls</th><th style="text-align:right;">Children</th><th style="text-align:right;">Youth</th><th style="text-align:right;">Members</th><th style="text-align:right;">Senior Citizens</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Tithes</th><th style="text-align:right;">Prophetic families</th><th style="text-align:right;">Prophetic souls</th></tr></thead>
               <tbody id="apostle-overseership-body"></tbody>
+              <tfoot id="apostle-overseership-foot"></tfoot>
             </table></div>
             <div id="apostle-drill" class="dash-card" hidden style="margin-top:16px;">
               <div class="section-heading">
@@ -2154,7 +2205,7 @@
       <h3 style="margin-top: 0; color:var(--dash-primary);">Edit Member Details</h3>
       <form id="edit-member-form" onsubmit="handleUpdateMember(event)" class="form-grid">
         <input type="hidden" id="edit-member-id">
-        <p id="edit-linked-child-note" class="muted-note" style="grid-column:1/-1;" hidden>Changes to this family member's role are made here. Congregation and family details are managed on the family head.</p>
+        <p id="edit-linked-child-note" class="muted-note" style="grid-column:1/-1;" hidden>Congregation and family details are managed on the family head. Youth cannot be selected as a new role.</p>
         <div class="form-group"><label>Member / Officer Role</label><select id="edit-role-group" onchange="toggleHierarchyFields('edit'); checkSisterFields('edit'); populateMemberOfficerOptions('edit');"></select></div>
         <div class="form-group" id="edit-officer-assignment-role-group" style="display:none;">
           <label>Officer Assignment Role</label>
@@ -2814,6 +2865,7 @@
           if (!isUnderdeacon() && !isSundaySchoolOnlyPriest()) subscribeToMemberChanges();
           const requestedView = new URLSearchParams(window.location.search).get('view');
           const allowedViews = new Set([
+            'view-my-information',
             'view-module-select',
             'view-member-capture',
             'view-priest-allocation',
@@ -2840,7 +2892,7 @@
             (selectedView !== 'view-admin-activity' || isAdministrator()) &&
             (selectedView !== 'view-account-invitations' || canManageAccountInvitations()) &&
             (selectedView !== 'view-priest-allocation' || currentUserIsPriest || isSystemAdmin) &&
-            (!isSundaySchoolOnlyPriest() || ['view-sunday-school', 'view-reporting', 'view-priest-allocation'].includes(selectedView));
+            (!isSundaySchoolOnlyPriest() || ['view-sunday-school', 'view-reporting', 'view-priest-allocation', 'view-my-information'].includes(selectedView));
           switchView(canOpenSelectedView ? selectedView : defaultView);
         } else {
           currentUser = null;
@@ -3004,6 +3056,11 @@
     async function handleLogout() {
       if (idleTimer) clearTimeout(idleTimer);
       if (membersChannel) { supabaseClient.removeChannel(membersChannel); membersChannel = null; }
+      myInformationRequest++;
+      document.getElementById('my-info-form').reset();
+      document.getElementById('my-info-form').hidden = true;
+      document.getElementById('my-info-children').innerHTML = '';
+      document.getElementById('my-info-status').textContent = '';
       await supabaseClient.auth.signOut();
       isApostle = false;
       currentUserIsPriest = false;
@@ -3680,8 +3737,8 @@
     }
 
     function switchView(viewId) {
-      if (isSundaySchoolOnlyPriest() && !['view-sunday-school', 'view-reporting', 'view-priest-allocation'].includes(viewId)) {
-        alert('Sunday School Priests can access Sunday School, its reporting, and member allocation.');
+      if (isSundaySchoolOnlyPriest() && !['view-sunday-school', 'view-reporting', 'view-priest-allocation', 'view-my-information'].includes(viewId)) {
+        alert('Sunday School Priests can access Sunday School, its reporting, member allocation and My Information.');
         return;
       }
       if (viewId !== 'view-sunday-school' && document.getElementById('view-sunday-school').classList.contains('active')) {
@@ -3693,7 +3750,7 @@
         sundaySchoolDirty = false;
         sundaySchoolRequest++;
       }
-      const underdeaconViews = new Set(['view-module-select', 'view-testimony', 'view-reporting']);
+      const underdeaconViews = new Set(['view-module-select', 'view-testimony', 'view-reporting', 'view-my-information']);
       if (isUnderdeacon() && !underdeaconViews.has(viewId) &&
           !(viewId === 'view-account-invitations' && canManageAccountInvitations())) {
         alert('Underdeacons can access only the Testimony module and Testimony reporting.');
@@ -3739,6 +3796,7 @@
       }
       if (viewId === 'view-sunday-school') setupSundaySchool();
       if (viewId === 'view-priest-allocation') loadPriestAllocationCandidates();
+      if (viewId === 'view-my-information') loadMyInformation();
       if (viewId === 'view-apostleship') openApostleDashboard();
       if (viewId === 'view-testimony') setupTestimonyModule();
       if (viewId === 'view-prophetic') setupPropheticModule();
@@ -3752,6 +3810,106 @@
     function isAdministrator() {
       return Boolean(currentUserProfile) &&
         (isSystemAdmin || String(currentUserProfile.role || '').toLowerCase() === 'admin');
+    }
+
+    let myInformationRequest = 0;
+    let myInformationSaving = false;
+
+    function renderMyInformation(data) {
+      if (!data || !data.person || !Array.isArray(data.children)) {
+        throw new Error('The database returned invalid personal information.');
+      }
+      const person = data.person;
+      for (const [id, value] of Object.entries({
+        'my-info-first': person.first_name, 'my-info-initials': person.initials,
+        'my-info-surname': person.surname, 'my-info-dob': person.date_of_birth,
+        'my-info-contact': person.contact_number, 'my-info-address': person.address
+      })) document.getElementById(id).value = value || '';
+      document.getElementById('my-info-dob').readOnly = person.dob_locked === true;
+      const sister = data.sister;
+      document.getElementById('my-info-sister').hidden = !sister;
+      document.getElementById('my-info-sister-name').required = Boolean(sister);
+      document.getElementById('my-info-sister-name').value = sister?.name || '';
+      document.getElementById('my-info-sister-contact').value = sister?.contact_number || '';
+      document.getElementById('my-info-children').innerHTML = data.children.length
+        ? data.children.map((child, index) => `
+          <div class="dash-card my-info-child" data-member-id="${escapeHospitalHtml(child.member_id)}" style="margin:0 0 12px;">
+            <h5 style="margin:0 0 8px;">Child ${index + 1}</h5>
+            <div class="form-grid">
+              <div class="form-group"><label>First name<input class="my-child-first" required value="${escapeHospitalHtml(child.first_name)}"></label></div>
+              <div class="form-group"><label>Initials<input class="my-child-initials" value="${escapeHospitalHtml(child.initials)}"></label></div>
+              <div class="form-group"><label>Surname<input class="my-child-surname" required value="${escapeHospitalHtml(child.surname)}"></label></div>
+              <div class="form-group"><label>Date of birth<input type="date" class="my-child-dob" value="${escapeHospitalHtml(child.date_of_birth)}" ${child.dob_locked ? 'readonly' : ''}></label><small class="muted-note">Dates derived from an ID are administrator-managed.</small></div>
+            </div>
+          </div>`).join('')
+        : '<p class="muted-note">No active linked children are available to edit.</p>';
+      document.getElementById('my-info-form').hidden = false;
+    }
+
+    async function loadMyInformation() {
+      if (myInformationSaving) return;
+      const requestId = ++myInformationRequest;
+      const status = document.getElementById('my-info-status');
+      const form = document.getElementById('my-info-form');
+      form.hidden = true;
+      status.textContent = 'Loading your information...';
+      try {
+        const { data, error } = await supabaseClient.rpc('officer_my_information');
+        if (requestId !== myInformationRequest) return;
+        if (error) throw error;
+        renderMyInformation(data);
+        status.textContent = '';
+      } catch (error) {
+        if (requestId !== myInformationRequest) return;
+        console.error('Could not load officer information:', error);
+        status.textContent = `Could not load your information: ${error.message || 'Unexpected error.'}`;
+      }
+    }
+
+    async function saveMyInformation(event) {
+      event.preventDefault();
+      if (myInformationSaving) return;
+      const requestId = ++myInformationRequest;
+      const form = document.getElementById('my-info-form');
+      const status = document.getElementById('my-info-status');
+      const value = id => document.getElementById(id).value.trim();
+      const person = {
+        first_name: value('my-info-first'), initials: value('my-info-initials'),
+        surname: value('my-info-surname'), date_of_birth: value('my-info-dob') || null,
+        contact_number: value('my-info-contact'), address: value('my-info-address')
+      };
+      const sister = document.getElementById('my-info-sister').hidden ? null : {
+        name: value('my-info-sister-name'), contact_number: value('my-info-sister-contact')
+      };
+      const children = Array.from(form.querySelectorAll('.my-info-child')).map(row => ({
+        member_id: row.dataset.memberId,
+        first_name: row.querySelector('.my-child-first').value.trim(),
+        initials: row.querySelector('.my-child-initials').value.trim(),
+        surname: row.querySelector('.my-child-surname').value.trim(),
+        date_of_birth: row.querySelector('.my-child-dob').value || null
+      }));
+      myInformationSaving = true;
+      document.getElementById('my-info-save').disabled = true;
+      document.getElementById('my-info-reload').disabled = true;
+      status.textContent = 'Saving your information...';
+      try {
+        const { data, error } = await supabaseClient.rpc('update_officer_my_information', {
+          p_person: person, p_sister: sister, p_children: children
+        });
+        if (requestId !== myInformationRequest) return;
+        if (error) throw error;
+        renderMyInformation(data);
+        status.textContent = 'Your information was saved.';
+        await showSignedInOfficer(currentUserProfile);
+      } catch (error) {
+        if (requestId !== myInformationRequest) return;
+        console.error('Could not save officer information:', error);
+        status.textContent = `Could not save your information: ${error.message || 'Unexpected error.'}`;
+      } finally {
+        myInformationSaving = false;
+        document.getElementById('my-info-save').disabled = false;
+        document.getElementById('my-info-reload').disabled = false;
+      }
     }
 
     function canManageAccountInvitations() {
@@ -4162,6 +4320,7 @@
     let apostleReport = null;
     let apostleDrill = null;
     let apostleLoadRequestId = 0;
+    let apostleTitheChart = null;
 
     function canViewApostleDashboard() {
       return isApostle || isSystemAdmin;
@@ -4250,6 +4409,13 @@
             `<td style="text-align:right;">${sums.propheticSouls}</td></tr>`;
         }).join('')
         : '<tr><td colspan="10" class="muted-note">No Overseerships found.</td></tr>';
+      const cell = value => `<td style="text-align:right;">${escapeHospitalHtml(String(value))}</td>`;
+      document.getElementById('apostle-overseership-foot').innerHTML = groups.length
+        ? `<tr><th style="text-align:left;">Apostleship 100 Total</th>${[
+          totals.souls, totals.children, totals.youth, totals.members, totals.seniorCitizens,
+          totals.officerCount, zarFormatterFull.format(totals.tithes), totals.propheticFamilies, totals.propheticSouls
+        ].map(cell).join('')}</tr>`
+        : '';
       renderApostleDrill(groups);
     }
 
@@ -4308,6 +4474,59 @@
         `<thead><tr>${head}</tr></thead><tbody>${body || '<tr><td class="muted-note">No congregations.</td></tr>'}</tbody><tfoot>${foot}</tfoot>`;
     }
 
+    function clearApostleTitheChart() {
+      if (apostleTitheChart) {
+        apostleTitheChart.destroy();
+        apostleTitheChart = null;
+      }
+      document.getElementById('apostle-tithe-chart-area').hidden = true;
+      document.getElementById('apostle-tithe-chart-table').hidden = true;
+      document.getElementById('apostle-tithe-chart-body').innerHTML = '';
+    }
+
+    async function loadApostleTitheChart(start, end, requestId) {
+      const status = document.getElementById('apostle-tithe-chart-status');
+      try {
+        const { data, error } = await supabaseClient.rpc('apostle_monthly_tithes', { p_start: start, p_end: end });
+        if (requestId !== apostleLoadRequestId) return;
+        if (error) throw error;
+        if (!Array.isArray(data) || !data.length || data.some(row =>
+          !/^\d{4}-\d{2}-01$/.test(row.month_start) ||
+          row.total === null || row.total === '' || !Number.isFinite(Number(row.total))
+        )) throw new Error('The database returned invalid monthly tithe data.');
+        const labels = data.map(row => {
+          const [year, month] = row.month_start.split('-').map(Number);
+          return new Intl.DateTimeFormat('en-ZA', { month: 'short', year: 'numeric', timeZone: 'UTC' })
+            .format(new Date(Date.UTC(year, month - 1, 1)));
+        });
+        const amounts = data.map(row => Number(row.total));
+        document.getElementById('apostle-tithe-chart-body').innerHTML = labels.map((label, index) =>
+          `<tr><td>${escapeHospitalHtml(label)}</td><td style="text-align:right;">${escapeHospitalHtml(zarFormatterFull.format(amounts[index]))}</td></tr>`
+        ).join('');
+        document.getElementById('apostle-tithe-chart-table').hidden = false;
+        if (typeof Chart === 'undefined') throw new Error('The chart library did not load. Monthly amounts are available in the table.');
+        document.getElementById('apostle-tithe-chart-area').hidden = false;
+        apostleTitheChart = new Chart(document.getElementById('apostle-tithe-chart'), {
+          type: 'line',
+          data: { labels, datasets: [{
+            label: 'Tithes', data: amounts, borderColor: '#537b9e', backgroundColor: '#537b9e',
+            borderWidth: 3, tension: 0.2, pointRadius: 4
+          }] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { callback: value => zarFormatterFull.format(value) } } },
+            plugins: { tooltip: { callbacks: { label: item => `Tithes: ${zarFormatterFull.format(item.parsed.y)}` } } }
+          }
+        });
+        status.textContent = data.length === 1 ? 'One month is in the selected period.' : '';
+      } catch (error) {
+        if (requestId !== apostleLoadRequestId) return;
+        console.error('Could not load monthly tithes:', error);
+        document.getElementById('apostle-tithe-chart-area').hidden = true;
+        status.textContent = `Monthly tithes unavailable: ${error.message || 'Unexpected error.'}`;
+      }
+    }
+
     async function loadApostleDashboard() {
       if (!canViewApostleDashboard()) return;
       const requestId = ++apostleLoadRequestId;
@@ -4315,7 +4534,10 @@
       const end = document.getElementById('apostle-end-date').value;
       const status = document.getElementById('apostle-status');
       const summary = document.getElementById('apostle-summary');
+      clearApostleTitheChart();
+      document.getElementById('apostle-tithe-chart-status').textContent = 'Loading monthly tithes...';
       if (!start || !end || start > end) {
+        summary.hidden = true;
         status.textContent = 'Choose a valid date range (start date must not be after end date).';
         return;
       }
@@ -4329,6 +4551,7 @@
         summary.hidden = false;
         status.textContent = `Tithes and Prophetic families for ${start} to ${end}.`;
         renderApostleDashboard();
+        await loadApostleTitheChart(start, end, requestId);
       } catch (error) {
         if (requestId !== apostleLoadRequestId) return;
         console.error('Could not load the Apostleship dashboard:', error);
@@ -4366,6 +4589,7 @@
         ]);
       if (isSystemAdmin) permittedViews.add('view-overseership-management');
       if (isSystemAdmin) permittedViews.add('view-apostleship');
+      if (!isApostle) permittedViews.add('view-my-information');
       if (canOpenSundaySchool()) permittedViews.add('view-sunday-school');
       if (canManageAccountInvitations()) permittedViews.add('view-account-invitations');
       if (currentUserIsPriest || isSystemAdmin) permittedViews.add('view-priest-allocation');
@@ -5012,10 +5236,15 @@
         : ROLES;
       ['new-role-group', 'edit-role-group'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.innerHTML = availableRoles.map(r => `<option value="${r}">${r}</option>`).join('');
+        if (el) el.innerHTML = availableRoles
+          .filter(role => role !== 'Youth' || id === 'edit-role-group')
+          .map(role => role === 'Youth'
+            ? '<option value="Youth" hidden disabled>Youth</option>'
+            : `<option value="${role}">${role}</option>`).join('');
       });
       const searchRole = document.getElementById('search-role-group');
-      if (searchRole) searchRole.innerHTML = '<option value="">All Roles / Offices</option>' + availableRoles.map(r => `<option value="${r}">${r}</option>`).join('');
+      if (searchRole) searchRole.innerHTML = '<option value="">All Roles / Offices</option>' +
+        availableRoles.filter(role => role !== 'Youth').map(r => `<option value="${r}">${r}</option>`).join('');
       const takenUpRole = document.getElementById('taken-up-role');
       if (takenUpRole) takenUpRole.innerHTML = availableRoles.map(role => `<option value="${escapeHospitalHtml(role)}">${escapeHospitalHtml(role)}</option>`).join('');
       toggleHierarchyFields('new');
@@ -5816,7 +6045,8 @@
       const linkedChild = Boolean(m.family_main_id);
       const roleSelect = document.getElementById('edit-role-group');
       Array.from(roleSelect.options).forEach(option => {
-        option.disabled = linkedChild && !['Child', 'Youth', m.role_group].includes(option.value);
+        option.disabled = option.value === 'Youth' ||
+          (linkedChild && !['Child', m.role_group].includes(option.value));
       });
       roleSelect.value = m.role_group || '';
       document.getElementById('edit-linked-child-note').hidden = !linkedChild;
@@ -5925,7 +6155,7 @@
             familyType !== (currentMember.family_type || (currentMember.is_family ? 'family_unit' : 'single_member')) ||
             document.getElementById('edit-congregation').value !== currentMember.congregation_id
           )) {
-            throw new Error('Manage congregation and family details on the family head. A linked child can be changed to Youth.');
+            throw new Error('Manage congregation and family details on the family head.');
           }
           const parentPayload = {
             ...currentMember,
