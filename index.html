@@ -513,7 +513,11 @@
 
     .testimony-house-list { display: grid; gap: 14px; }
     .testimony-house-card { overflow: hidden; border: 1px solid var(--dash-border); border-radius: 12px; background: #fff; }
-    .testimony-house-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 16px 18px; background: #f8fafc; }
+    .testimony-house-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 16px 18px; background: #f8fafc; cursor: pointer; list-style: none; }
+    .testimony-house-header::-webkit-details-marker { display: none; }
+    .testimony-house-header::before { content: '+'; font-size: 1.2rem; font-weight: 700; }
+    .testimony-house-card[open] > .testimony-house-header::before { content: '−'; }
+    .testimony-house-header > div { flex: 1; min-width: 0; }
     .testimony-house-title { margin: 0; color: var(--dash-text-main); font-size: 1rem; }
     .testimony-house-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; color: var(--dash-text-muted); font-size: 0.8rem; }
     .testimony-category-badge, .testimony-visit-count { display: inline-flex; align-items: center; align-self: flex-start; padding: 4px 9px; border-radius: 999px; color: #38556e; background: #eaf1f7; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
@@ -537,7 +541,8 @@
       .testimony-house-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
     @media (max-width: 430px) {
-      .testimony-house-header, .testimony-visit-item { flex-direction: column; }
+      .testimony-house-header { flex-wrap: wrap; }
+      .testimony-visit-item { flex-direction: column; }
       .testimony-house-details { grid-template-columns: minmax(0, 1fr); }
       .testimony-house-detail-wide { grid-column: auto; }
       .testimony-house-actions { justify-content: flex-start; }
@@ -1228,7 +1233,7 @@
                 <li>Use the <strong>Officer template</strong> for Overseers, Prophets, Evangelists, Elders, Priests, and Underdeacons, including their Sister role groups.</li>
                 <li>Use the <strong>Member template</strong> for Brothers, Sisters, Youth, and Children.</li>
                 <li>The first row contains column headings such as <code>first_name</code>. Keep that row, and do not rename, remove, or rearrange its columns. Enter one person per row; leave unused optional cells blank.</li>
-                <li>The Officer template has an <code>officer_assignment_role</code> column. Fill it only when the administrator gives you an assignment to enter; the accepted values depend on the officer's role. For an Elder or Priest they include <code>Sunday School</code>, <code>Youth</code>, <code>Sunday School and Youth</code>, <code>Shepherd</code>, <code>Senior Citizens</code>, <code>Hospital</code>, <code>Resting</code>, <code>Freedom of the City</code>, <code>General</code>, <code>Special Tasks</code>, <code>Evangelical</code>, <code>Prophetic</code>, and <code>Evangelical / Prophetic</code>. For an Overseer, Prophet, or Evangelist, use only <code>Resting</code> or <code>Freedom of the City</code>. Otherwise, leave it blank.</li>
+                <li>The Officer template has an <code>officer_assignment_role</code> column. Fill it only when the administrator gives you an assignment to enter; the accepted values depend on the officer's role. For an Elder or Priest they include <code>Sunday School</code>, <code>Youth</code>, <code>Sunday School and Youth</code>, <code>Shepherd</code>, <code>Shepherd and Sunday School</code>, <code>Shepherd and Youth</code>, <code>Senior Citizens</code>, <code>Hospital</code>, <code>Resting</code>, <code>Freedom of the City</code>, <code>General</code>, <code>Special Tasks</code>, <code>Evangelical</code>, <code>Prophetic</code>, and <code>Evangelical / Prophetic</code>. For an Overseer, Prophet, or Evangelist, use only <code>Resting</code> or <code>Freedom of the City</code>. Otherwise, leave it blank.</li>
                 <li>Complete the template in Excel or another spreadsheet program. Keep the column headings in the first worksheet. You can upload the completed file as <strong>.xlsx</strong> or save it as <strong>.csv</strong>. Format ID columns as Text before entering numbers so Excel does not remove leading zeros or round digits.</li>
               </ul>
 
@@ -1247,7 +1252,7 @@
               <ul>
                 <li><strong>Elder or Elder Sister:</strong> the responsible Overseer.</li>
                 <li><strong>Priest or Priest Sister:</strong> the responsible Elder.</li>
-                <li><strong>Underdeacon, Underdeacon Sister, Brother, Sister, or Youth:</strong> the responsible Priest in the same congregation. For a Youth row, the responsible officer must be a Priest or an Elder with a <code>Youth</code> or <code>Sunday School and Youth</code> assignment who serves that congregation.</li>
+                <li><strong>Underdeacon, Underdeacon Sister, Brother, Sister, or Youth:</strong> the responsible Priest in the same congregation. For a Youth row, the responsible officer must be a Priest or an Elder with a <code>Youth</code>, <code>Sunday School and Youth</code>, or <code>Shepherd and Youth</code> assignment who serves that congregation.</li>
                 <li><strong>Overseer, Prophet, or Evangelist:</strong> leave this column blank.</li>
                 <li><strong>Child:</strong> leave this column blank when adding the child to a family head, as described below.</li>
               </ul>
@@ -1599,6 +1604,7 @@
 
         <div class="dash-card">
           <h3 style="margin-top:0;">Captured Testimony Houses</h3>
+          <p class="muted-note">Expand a house to see its details and visit history.</p>
           <form id="testimony-visit-form" onsubmit="saveTestimonyVisit(event)" class="form-grid" style="margin-bottom:16px;">
             <div class="form-group"><label for="testimony-visit-house">Select Testimony House</label><select id="testimony-visit-house" required><option value="">-- Select House --</option></select></div>
             <div class="form-group"><label for="testimony-visit-date">Date Visited</label><input type="date" id="testimony-visit-date" required title="Example: 15 January 2026"><small class="muted-note">Example: 15 January 2026</small></div>
@@ -1847,18 +1853,14 @@
           <div class="section-heading">
             <h3 style="margin:0;">People Currently in Hospital</h3>
           </div>
-          <div class="table-container" style="margin-top:12px;">
-            <table>            <thead><tr><th>Admission</th><th>Last Visit</th><th>Visits</th><th>Visited by</th><th>Hospital</th><th>Person</th><th>Town / City</th><th>Status</th><th>Discharge</th><th>Actions</th></tr></thead>
-            <tbody id="hospital-table-body"><tr><td colspan="10" style="text-align:center;">Loading...</td></tr></tbody></table>
-          </div>
+          <p class="muted-note">Expand an admission to see its details and visits.</p>
+          <div id="hospital-table-body" class="testimony-house-list"><p class="muted-note">Loading...</p></div>
         </div>
 
         <div class="dash-card">
           <h3 style="margin-top:0;">Hospital Archive</h3>
-          <div class="table-container">
-            <table><thead><tr><th>Admission</th><th>Discharged</th><th>Visits</th><th>Hospital</th><th>Person</th><th>Town / City</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="hospital-archive-body"><tr><td colspan="8" style="text-align:center;">No archived records.</td></tr></tbody></table>
-          </div>
+          <p class="muted-note">Expand an archived admission to see its details and visits.</p>
+          <div id="hospital-archive-body" class="testimony-house-list"><p class="muted-note">No archived records.</p></div>
         </div>
       </div>
 
@@ -3785,7 +3787,7 @@
         throw new Error('System Admin access is required to manage overseerships.');
       }
       if (viewId === 'view-sunday-school' && !canOpenSundaySchool()) {
-        alert('Sunday School is available to administrators and Sunday School Priests.');
+        alert('Sunday School is available to administrators and assigned Sunday School officers.');
         return;
       }
       document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -3937,21 +3939,37 @@
       return currentUserIsPriest && !isAdministrator();
     }
 
-    function canOpenSundaySchool() {
-      if (isAdministrator()) return true;
-      if (!isPriestOnly()) return false;
+    function currentPriestAssignmentRole() {
+      if (!isPriestOnly()) return '';
       const email = String(currentUser?.email || '').trim().toLowerCase();
       const matches = cachedPriests.filter(officer =>
         email && String(officer.email || '').trim().toLowerCase() === email &&
         ['Priest', 'Priest Sister'].includes(officer.role_group)
       );
-      if (matches.length !== 1) return false;
-      return ['sunday school', 'sunday school and youth', 'youth & sunday school', 'youth and sunday school']
-        .includes(normalizeOfficerAssignmentRole(matches[0].officer_assignment_role || matches[0].priest_type));
+      return matches.length === 1
+        ? normalizeOfficerAssignmentRole(matches[0].officer_assignment_role || matches[0].priest_type)
+        : '';
+    }
+
+    function canOpenSundaySchool() {
+      if (isAdministrator()) return true;
+      if (['sunday school', 'sunday school and youth', 'youth & sunday school',
+        'youth and sunday school', 'shepherd and sunday school'].includes(currentPriestAssignmentRole())) return true;
+      if (isPriestOnly() || isUnderdeacon() || isApostle) return false;
+      const email = String(currentUser?.email || '').trim().toLowerCase();
+      const matches = [...cachedElders, ...cachedPriests].filter(officer =>
+        email && String(officer.email || '').trim().toLowerCase() === email &&
+        ['Elder', 'Elder Sister', 'Priest', 'Priest Sister'].includes(officer.role_group)
+      );
+      return matches.length === 1 &&
+        ['Elder', 'Elder Sister'].includes(matches[0].role_group) &&
+        !matches[0].is_placeholder &&
+        normalizeOfficerAssignmentRole(matches[0].officer_assignment_role || matches[0].elder_type) === 'shepherd and sunday school';
     }
 
     function isSundaySchoolOnlyPriest() {
-      return isPriestOnly() && canOpenSundaySchool();
+      return isPriestOnly() && canOpenSundaySchool() &&
+        currentPriestAssignmentRole() !== 'shepherd and sunday school';
     }
 
     let priestAllocationBusy = false;
@@ -5342,13 +5360,13 @@
     }
 
     function hasYouthAssignment(officer) {
-      return ['youth', 'sunday school and youth'].includes(normalizeOfficerAssignmentRole(
+      return ['youth', 'sunday school and youth', 'shepherd and youth'].includes(normalizeOfficerAssignmentRole(
         officer.officer_assignment_role || officer.priest_type
       ));
     }
 
     function isSundaySchoolOrYouthRole(role) {
-      return ['sunday school', 'youth', 'sunday school and youth']
+      return ['sunday school', 'youth', 'sunday school and youth', 'shepherd and sunday school', 'shepherd and youth']
         .includes(normalizeOfficerAssignmentRole(role));
     }
 
@@ -5481,7 +5499,8 @@
     }
 
     const FULL_OFFICER_ASSIGNMENT_ROLES = [
-      'Sunday School', 'Youth', 'Sunday School and Youth', 'Shepherd', 'Senior Citizens', 'Hospital',
+      'Sunday School', 'Youth', 'Sunday School and Youth', 'Shepherd', 'Shepherd and Sunday School',
+      'Shepherd and Youth', 'Senior Citizens', 'Hospital',
       'Resting', 'Freedom of the City', 'Special Tasks', 'Evangelical', 'Prophetic',
       'Evangelical / Prophetic'
     ];
@@ -7276,7 +7295,7 @@
             String(officer.member_id) === String(row.assigned_priest_id)
           )) {
         throw new Error(normalizedRole === 'youth'
-          ? 'The responsible officer must be a Priest or Elder with a Youth or Sunday School and Youth assignment who serves the selected congregation.'
+          ? 'The responsible officer must be a Priest or Elder with a Youth, Sunday School and Youth, or Shepherd and Youth assignment who serves the selected congregation.'
           : 'assigned_priest_id must identify a Priest in the selected congregation.');
       }
     }
@@ -9080,8 +9099,8 @@
         const action = record.taken_up_member_id
           ? '<span class="muted-note">Taken up</span>'
           : `<button type="button" class="btn btn-success" onclick="openTakenUpModal('${escapeHospitalHtml(record.house_id)}')">Taken up</button>`;
-        return `<article class="testimony-house-card">
-          <header class="testimony-house-header">
+        return `<details class="testimony-house-card">
+          <summary class="testimony-house-header">
             <div>
               <h4 class="testimony-house-title">${escapeHospitalHtml(name)}</h4>
               <div class="testimony-house-meta">
@@ -9090,7 +9109,7 @@
               </div>
             </div>
             <span class="testimony-category-badge">${escapeHospitalHtml(record.category || 'Uncategorised')}</span>
-          </header>
+          </summary>
           <dl class="testimony-house-details">
             <div class="testimony-house-detail"><dt>Contact / Email</dt><dd>${escapeHospitalHtml([record.contact_number, record.email].filter(Boolean).join('\n') || '-')}</dd></div>
             <div class="testimony-house-detail"><dt>Souls</dt><dd>${escapeHospitalHtml(record.family_souls_count ?? '-')}</dd></div>
@@ -9106,7 +9125,7 @@
             ${action}
             ${renderOperationalRecordActions('testimony_houses', record)}
           </div>
-        </article>`;
+        </details>`;
       }).join('') : '<p class="muted-note">No testimony records yet.</p>';
     }
 
@@ -9832,13 +9851,54 @@
       return row.admission_group_id ? String(row.admission_group_id) : '';
     }
 
+    function renderHospitalAdmission(entry, archived) {
+      const row = entry.latest;
+      const person = `${row.patient_first_name || row.patient_name || ''} ${row.patient_surname || row.patient_last_name || ''}`.trim();
+      const admissionDate = row.admission_date || row.date_admitted || '';
+      const lastVisit = row.visit_date || row.date_visited || '';
+      const dischargeRow = entry.rows.find(visit => visit.discharge_date || visit.archived_at) || row;
+      const dischargeDate = dischargeRow.discharge_date || dischargeRow.archived_at || '';
+      const visits = entry.rows.map(visit => {
+        const visitDate = visit.visit_date || visit.date_visited || '';
+        const officer = cachedMembers.find(member => String(member.member_id) === String(visit.officer_member_id));
+        return `<li class="testimony-visit-item">
+          <div><time class="testimony-visit-date">${escapeHospitalHtml(visitDate || 'Date not recorded')}</time>
+            <div class="testimony-visit-comments">Visited by: ${escapeHospitalHtml(officer ? officerLabel(officer) : visit.officer || 'Not recorded')}</div></div>
+          <div class="testimony-visit-actions">${renderOperationalRecordActions('hospital_visits', visit)}</div>
+        </li>`;
+      }).join('');
+      const action = archived
+        ? `<button type="button" class="btn btn-success" onclick="prepareHospitalReadmission('${encodeOperationalRecord(row)}')">Readmit</button>`
+        : row.admission_group_id
+          ? `<button type="button" class="btn btn-secondary" onclick="dischargeHospitalAdmission('${escapeHospitalHtml(row.admission_group_id)}')">Discharge</button>`
+          : '<span class="muted-note">Discharge unavailable for this legacy admission.</span>';
+      return `<details class="testimony-house-card">
+        <summary class="testimony-house-header">
+          <div><h4 class="testimony-house-title">${escapeHospitalHtml(person || 'Name not recorded')}</h4>
+            <div class="testimony-house-meta"><span>Admitted ${escapeHospitalHtml(admissionDate || 'date not recorded')}</span><span>${escapeHospitalHtml(row.hospital_name || 'Hospital not recorded')}</span></div></div>
+          <span class="testimony-visit-count">${entry.rows.length} visit(s)</span>
+        </summary>
+        <dl class="testimony-house-details">
+          <div class="testimony-house-detail"><dt>Last visit</dt><dd>${escapeHospitalHtml(lastVisit || '-')}</dd></div>
+          <div class="testimony-house-detail"><dt>Town / City</dt><dd>${escapeHospitalHtml(row.town_city || '-')}</dd></div>
+          <div class="testimony-house-detail"><dt>Status</dt><dd>${escapeHospitalHtml(row.status || (archived ? 'Discharged' : 'Admitted'))}</dd></div>
+          ${archived ? `<div class="testimony-house-detail"><dt>Discharged</dt><dd>${escapeHospitalHtml(dischargeDate || '-')}</dd></div>` : ''}
+        </dl>
+        <section class="testimony-visits" aria-label="Visit history">
+          <h5 class="testimony-visits-heading">Visit history</h5><ol class="testimony-visit-list">${visits}</ol>
+        </section>
+        <div class="testimony-house-actions">${action}</div>
+      </details>`;
+    }
+
     async function loadHospitalVisits() {
       const activeBody = document.getElementById('hospital-table-body');
       const archiveBody = document.getElementById('hospital-archive-body');
       const { data, error } = await supabaseClient.from('hospital_visits').select('*')
         .order('visit_date', { ascending: false });
       if (error) {
-        activeBody.innerHTML = `<tr><td colspan="10" style="text-align:center;">${escapeHospitalHtml(error.message)}</td></tr>`;
+        activeBody.innerHTML = `<p class="muted-note" role="alert">${escapeHospitalHtml(error.message)}</p>`;
+        archiveBody.innerHTML = `<p class="muted-note" role="alert">${escapeHospitalHtml(error.message)}</p>`;
         setModuleStatus('hospital-status', error.message, 'error');
         console.error('Could not load hospital visits:', error);
         return;
@@ -9860,23 +9920,12 @@
         .filter(entry => entry.latest.admission_group_id)
         .map(entry => `<option value="${escapeHospitalHtml(entry.key)}">${escapeHospitalHtml(`${entry.latest.patient_first_name || entry.latest.patient_name || ''} ${entry.latest.patient_surname || entry.latest.patient_last_name || ''}`.trim())} — ${escapeHospitalHtml(entry.latest.hospital_name || '')} (${escapeHospitalHtml(entry.latest.admission_date || entry.latest.date_admitted || '')})</option>`)
         .join('');
-      activeBody.innerHTML = active.length ? active.map(entry => {
-        const row = entry.latest;
-        const person = `${row.patient_first_name || row.patient_name || ''} ${row.patient_surname || row.patient_last_name || ''}`.trim();
-        const officer = cachedMembers.find(member => String(member.member_id) === String(row.officer_member_id));
-        const dischargeAction = row.admission_group_id
-          ? `<button type="button" class="btn btn-secondary" onclick="dischargeHospitalAdmission('${escapeHospitalHtml(row.admission_group_id)}')">Discharge</button>`
-          : '—';
-        const rowActions = entry.rows.map(visit => renderOperationalRecordActions('hospital_visits', visit)).join('<br>');
-        return `<tr><td>${escapeHospitalHtml(row.admission_date || row.date_admitted || '')}</td><td>${escapeHospitalHtml(row.visit_date || row.date_visited || '')}</td><td>${entry.rows.length}</td><td>${escapeHospitalHtml(officer ? officerLabel(officer) : row.officer || '')}</td><td>${escapeHospitalHtml(row.hospital_name || '')}</td><td>${escapeHospitalHtml(person)}</td><td>${escapeHospitalHtml(row.town_city || '')}</td><td>${escapeHospitalHtml(row.status || 'Admitted')}</td><td>${dischargeAction}</td><td>${rowActions}</td></tr>`;
-      }).join('') : '<tr><td colspan="10" style="text-align:center;">No members currently in hospital.</td></tr>';
-      archiveBody.innerHTML = archived.length ? archived.map(entry => {
-        const row = entry.latest;
-        const person = `${row.patient_first_name || row.patient_name || ''} ${row.patient_surname || row.patient_last_name || ''}`.trim();
-        const rowActions = entry.rows.map(visit => renderOperationalRecordActions('hospital_visits', visit)).join('<br>');
-        const readmitAction = `<button type="button" class="btn btn-success" onclick="prepareHospitalReadmission('${encodeOperationalRecord(row)}')">Readmit</button>`;
-        return `<tr><td>${escapeHospitalHtml(row.admission_date || row.date_admitted || '')}</td><td>${escapeHospitalHtml(row.discharge_date || row.archived_at || '')}</td><td>${entry.rows.length}</td><td>${escapeHospitalHtml(row.hospital_name || '')}</td><td>${escapeHospitalHtml(person)}</td><td>${escapeHospitalHtml(row.town_city || '')}</td><td>${escapeHospitalHtml(row.status || 'Discharged')}</td><td>${readmitAction}<br>${rowActions}</td></tr>`;
-      }).join('') : '<tr><td colspan="8" style="text-align:center;">No discharged admissions.</td></tr>';
+      activeBody.innerHTML = active.length
+        ? active.map(entry => renderHospitalAdmission(entry, false)).join('')
+        : '<p class="muted-note">No members currently in hospital.</p>';
+      archiveBody.innerHTML = archived.length
+        ? archived.map(entry => renderHospitalAdmission(entry, true)).join('')
+        : '<p class="muted-note">No discharged admissions.</p>';
     }
 
     function prepareHospitalReadmission(encodedRecord) {
