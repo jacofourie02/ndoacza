@@ -635,6 +635,11 @@
     .attendance-family-details > summary::-webkit-details-marker { display: none; }
     .attendance-family-details > summary::before { content: '+ '; font-weight: bold; }
     .attendance-family-details[open] > summary::before { content: '− '; }
+    .attendance-history-group { border: 1px solid var(--dash-border); border-radius: 8px; margin: 8px 0; }
+    .attendance-history-group > summary { cursor: pointer; list-style: none; padding: 12px; }
+    .attendance-history-group > summary::-webkit-details-marker { display: none; }
+    .attendance-history-group > summary::before { content: '+ '; font-weight: bold; }
+    .attendance-history-group[open] > summary::before { content: '− '; }
     
     .chart-container {
       position: relative;
@@ -1223,7 +1228,7 @@
                 <li>Use the <strong>Officer template</strong> for Overseers, Prophets, Evangelists, Elders, Priests, and Underdeacons, including their Sister role groups.</li>
                 <li>Use the <strong>Member template</strong> for Brothers, Sisters, Youth, and Children.</li>
                 <li>The first row contains column headings such as <code>first_name</code>. Keep that row, and do not rename, remove, or rearrange its columns. Enter one person per row; leave unused optional cells blank.</li>
-                <li>The Officer template has an <code>officer_assignment_role</code> column. Fill it only when the administrator gives you an assignment to enter; the accepted values depend on the officer's role. For an Elder or Priest they include <code>Sunday School</code>, <code>Youth</code>, <code>Sunday School and Youth</code>, <code>Shepherd</code>, <code>Senior Citizens</code>, <code>Resting</code>, <code>Freedom of the City</code>, <code>General</code>, <code>Special Tasks</code>, <code>Evangelical</code>, <code>Prophetic</code>, and <code>Evangelical / Prophetic</code>. For an Overseer, Prophet, or Evangelist, use only <code>Resting</code> or <code>Freedom of the City</code>. Otherwise, leave it blank.</li>
+                <li>The Officer template has an <code>officer_assignment_role</code> column. Fill it only when the administrator gives you an assignment to enter; the accepted values depend on the officer's role. For an Elder or Priest they include <code>Sunday School</code>, <code>Youth</code>, <code>Sunday School and Youth</code>, <code>Shepherd</code>, <code>Senior Citizens</code>, <code>Hospital</code>, <code>Resting</code>, <code>Freedom of the City</code>, <code>General</code>, <code>Special Tasks</code>, <code>Evangelical</code>, <code>Prophetic</code>, and <code>Evangelical / Prophetic</code>. For an Overseer, Prophet, or Evangelist, use only <code>Resting</code> or <code>Freedom of the City</code>. Otherwise, leave it blank.</li>
                 <li>Complete the template in Excel or another spreadsheet program. Keep the column headings in the first worksheet. You can upload the completed file as <strong>.xlsx</strong> or save it as <strong>.csv</strong>. Format ID columns as Text before entering numbers so Excel does not remove leading zeros or round digits.</li>
               </ul>
 
@@ -1524,12 +1529,8 @@
             <div><h3 style="margin:0;">Attendance History</h3><p class="muted-note">Review and correct recorded member and visitor attendance.</p></div>
             <button type="button" class="btn btn-secondary" onclick="loadAttendanceHistory()">Refresh History</button>
           </div>
-          <div class="table-container">
-            <table>
-              <thead><tr><th>Date</th><th>Activity</th><th>Member / Visitor</th><th>Souls</th><th>Actions</th></tr></thead>
-              <tbody id="attendance-history-body"><tr><td colspan="5" style="text-align:center;">Attendance history loads when you open this module.</td></tr></tbody>
-            </table>
-          </div>
+          <p class="muted-note">Totals include records you can access. Visitors are counted separately from members. Where a member's attendance has no recorded congregation, their current congregation is shown.</p>
+          <div id="attendance-history-body"><p class="muted-note">Attendance history loads when you open this module.</p></div>
         </div>
       </div>
 
@@ -1586,6 +1587,14 @@
             </div>
             <button type="submit" class="btn btn-success" style="grid-column:1/-1;">Save Testimony Attendance</button>
           </form>
+        </div>
+
+        <div class="dash-card">
+          <div class="section-heading">
+            <div><h3 style="margin:0;">Testimony Attendance History</h3><p class="muted-note">Totals include records you can access. Visitors are counted separately from members. Where a member's attendance has no recorded congregation, their current congregation is shown.</p></div>
+            <button type="button" class="btn btn-secondary" onclick="loadAttendanceHistory()">Refresh History</button>
+          </div>
+          <div id="testimony-attendance-history-body"><p class="muted-note">Attendance history loads when you open this module.</p></div>
         </div>
 
         <div class="dash-card">
@@ -5472,7 +5481,7 @@
     }
 
     const FULL_OFFICER_ASSIGNMENT_ROLES = [
-      'Sunday School', 'Youth', 'Sunday School and Youth', 'Shepherd', 'Senior Citizens',
+      'Sunday School', 'Youth', 'Sunday School and Youth', 'Shepherd', 'Senior Citizens', 'Hospital',
       'Resting', 'Freedom of the City', 'Special Tasks', 'Evangelical', 'Prophetic',
       'Evangelical / Prophetic'
     ];
@@ -8587,36 +8596,102 @@
       });
     }
 
+    let attendanceHistoryRequestId = 0;
+
+    async function fetchAttendanceHistoryPages(table, columns, orderColumn, congregationIds) {
+      const rows = [];
+      let expectedCount = null;
+      for (let offset = 0; ;) {
+        let query = supabaseClient.from(table).select(columns, { count: 'exact' });
+        if (congregationIds) query = query.in('congregation_id', congregationIds);
+        const { data, error, count } = await query.order(orderColumn).range(offset, offset + 999);
+        if (error) throw error;
+        if (!Array.isArray(data) || !Number.isInteger(count) ||
+            (expectedCount !== null && count !== expectedCount)) {
+          throw new Error('Attendance history changed or could not be loaded completely. Refresh and try again.');
+        }
+        expectedCount = count;
+        rows.push(...data);
+        if (rows.length === count) return rows;
+        if (!data.length || rows.length > count) throw new Error('Attendance history could not be loaded completely. Refresh and try again.');
+        offset += data.length;
+      }
+    }
+
+    function renderAttendanceHistory(body, records, unavailableRecords) {
+      if (!body) return;
+      const groups = new Map();
+      records.forEach(item => {
+        const key = JSON.stringify([item.date, item.activity, item.congregationId]);
+        if (!groups.has(key)) groups.set(key, { ...item, members: 0, visitors: 0, rows: [] });
+        const group = groups.get(key);
+        group[item.table === 'attendance_records' ? 'members' : 'visitors'] += Number(item.souls);
+        group.rows.push(item);
+      });
+      const notice = unavailableRecords
+        ? '<p class="muted-note">Some member records are unavailable, so their attendance is not included in these totals.</p>'
+        : '';
+      body.innerHTML = notice + (groups.size ? Array.from(groups.values()).sort((left, right) =>
+        String(right.date || '').localeCompare(String(left.date || '')) ||
+        String(left.activity || '').localeCompare(String(right.activity || '')) ||
+        left.congregation.localeCompare(right.congregation)
+      ).map(group => {
+        const rows = group.rows.map(item => {
+          const people = Array.isArray(item.attendees) ? item.attendees : [];
+          const groupedPeople = item.family || people.length > 1;
+          const label = groupedPeople ? `Family record: ${item.name}` : people[0]?.name || item.name;
+          const names = groupedPeople && people.length
+            ? people.map(person => `<div>${escapeHospitalHtml(person.name || 'Name not recorded')}</div>`).join('')
+            : !people.length && (item.family || Number(item.souls) > 1)
+              ? '<div class="muted-note">Individual attendees not recorded</div>'
+              : '';
+          return `<tr><td>${escapeHospitalHtml(label || '')}${names}</td><td>${item.table === 'attendance_records' ? 'Member' : 'Visitor'}</td><td>${escapeHospitalHtml(item.souls)}</td><td>${renderOperationalRecordActions(item.table, item.record)}</td></tr>`;
+        }).join('');
+        return `<details class="attendance-history-group"><summary><strong>${escapeHospitalHtml(group.date || 'Date not recorded')}</strong> &mdash; ${escapeHospitalHtml(group.activity || 'Activity not recorded')} &mdash; ${escapeHospitalHtml(group.congregation)} &mdash; ${group.members} member(s), ${group.visitors} visitor(s)</summary><div class="table-container"><table><thead><tr><th>Attendees</th><th>Type</th><th>Souls</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+      }).join('') : '<p class="muted-note">No attendance history.</p>');
+    }
+
     async function loadAttendanceHistory() {
       const body = document.getElementById('attendance-history-body');
-      if (!body) return;
+      const testimonyBody = document.getElementById('testimony-attendance-history-body');
+      if (!body && !testimonyBody) return;
+      const requestId = ++attendanceHistoryRequestId;
       const tenantCongregationIds = getTenantCongregationIds();
-      const tenantMembers = new Map(cachedMembers
-        .filter(member => tenantCongregationIds.has(String(member.congregation_id)))
-        .map(member => [String(member.member_id), member]));
-      const [membersResult, visitorsResult] = await Promise.all([
-        supabaseClient.from('attendance_records').select('*').order('activity_date', { ascending: false }),
-        supabaseClient.from('attendance_visitors').select('*').order('activity_date', { ascending: false })
-      ]);
-      const error = membersResult.error || visitorsResult.error;
-      if (error) {
-        body.innerHTML = `<tr><td colspan="5" style="text-align:center;">${escapeHospitalHtml(error.message)}</td></tr>`;
-        setModuleStatus('attendance-status', error.message, 'error');
-        console.error('Could not load attendance history:', error);
-        return;
-      }
-      const memberRows = getVisibleOperationalRecords('attendance_records', membersResult.data || [])
+      try {
+        const congregationIds = [...tenantCongregationIds];
+        const [memberRecords, visitorRecords, members] = await Promise.all([
+          fetchAttendanceHistoryPages('attendance_records', '*', 'attendance_id'),
+          fetchAttendanceHistoryPages('attendance_visitors', '*', 'attendance_visitor_id'),
+          congregationIds.length
+            ? fetchAttendanceHistoryPages('members', 'member_id,congregation_id,role_group,first_name,surname,is_family,family_type', 'member_id', congregationIds)
+            : Promise.resolve([])
+        ]);
+        if (requestId !== attendanceHistoryRequestId) return;
+        const tenantMembers = new Map(members
+          .filter(member => tenantCongregationIds.has(String(member.congregation_id)))
+          .map(member => [String(member.member_id), member]));
+        const congregationNames = new Map(cachedCongregations.map(congregation =>
+          [String(congregation.congregation_id), congregation.congregation_name || String(congregation.congregation_id)]
+        ));
+        const visibleMemberRecords = getVisibleOperationalRecords('attendance_records', memberRecords);
+        const unavailableRecords = visibleMemberRecords.filter(record =>
+          !tenantMembers.has(String(record.member_id)) &&
+          (!record.congregation_id || tenantCongregationIds.has(String(record.congregation_id)))
+        );
+        const memberRows = visibleMemberRecords
         .filter(record => {
           const member = tenantMembers.get(String(record.member_id));
           return member && (!record.congregation_id ||
             tenantCongregationIds.has(String(record.congregation_id)));
         }).map(record => {
           const member = tenantMembers.get(String(record.member_id));
-          const name = member ? formatAttendanceMemberName(member) : record.member_id;
+          const congregationId = String(record.congregation_id || member.congregation_id);
           return {
             date: record.activity_date,
             activity: record.activity_type,
-            name,
+            congregationId,
+            congregation: congregationNames.get(congregationId) || congregationId,
+            name: formatAttendanceMemberName(member),
             souls: record.family_members_count || 1,
             attendees: record.attendees,
             family: member.is_family || (member.family_type && member.family_type !== 'single_member'),
@@ -8624,25 +8699,35 @@
             record
           };
         });
-      const visitorRows = getVisibleOperationalRecords('attendance_visitors', visitorsResult.data || [])
+        const visitorRows = getVisibleOperationalRecords('attendance_visitors', visitorRecords)
         .filter(record => tenantCongregationIds.has(String(record.congregation_id)))
-        .map(record => ({
-          date: record.activity_date,
-          activity: record.activity_type,
-          name: `${record.first_name || ''} ${record.surname || ''}`.trim(),
-          souls: record.family_souls_count || 1,
-          table: 'attendance_visitors',
-          record
-        }));
-      const records = [...memberRows, ...visitorRows].sort((left, right) =>
-        String(right.date || '').localeCompare(String(left.date || ''))
-      );
-      body.innerHTML = records.length ? records.map(item => {
-        const detail = Array.isArray(item.attendees)
-          ? `<details><summary>People attending</summary>${item.attendees.map(person => `<div>${escapeHospitalHtml(person.name)}</div>`).join('')}</details>`
-          : item.family || Number(item.souls) > 1 ? '<div class="muted-note">Individual attendees not recorded</div>' : '';
-        return `<tr><td>${escapeHospitalHtml(item.date || '')}</td><td>${escapeHospitalHtml(item.activity || '')}</td><td>${escapeHospitalHtml(item.name || '')}${detail}</td><td>${escapeHospitalHtml(item.souls)}</td><td>${renderOperationalRecordActions(item.table, item.record)}</td></tr>`;
-      }).join('') : '<tr><td colspan="5" style="text-align:center;">No attendance history.</td></tr>';
+        .map(record => {
+          const congregationId = String(record.congregation_id);
+          return {
+            date: record.activity_date,
+            activity: record.activity_type,
+            congregationId,
+            congregation: congregationNames.get(congregationId) || congregationId,
+            name: `${record.first_name || ''} ${record.surname || ''}`.trim(),
+            souls: record.family_souls_count || 1,
+            table: 'attendance_visitors',
+            record
+          };
+        });
+        const records = [...memberRows, ...visitorRows];
+        renderAttendanceHistory(body, records, unavailableRecords.length);
+        renderAttendanceHistory(testimonyBody, records.filter(item =>
+          ['Monday Testimony', 'Thursday Testimony'].includes(item.activity)
+        ), unavailableRecords.some(record =>
+          ['Monday Testimony', 'Thursday Testimony'].includes(record.activity_type)
+        ));
+      } catch (error) {
+        if (requestId !== attendanceHistoryRequestId) return;
+        const message = `<p class="muted-note" role="alert">Could not load attendance history: ${escapeHospitalHtml(error.message || 'Unexpected error.')}</p>`;
+        if (body) body.innerHTML = message;
+        if (testimonyBody) testimonyBody.innerHTML = message;
+        console.error('Could not load attendance history:', error);
+      }
     }
 
     function selectAllAttendanceMembers() {
@@ -8841,6 +8926,7 @@
       if (attendanceOfficer) attendanceOfficer.innerHTML = '<option value="">-- All Officers --</option>' + options;
       filterTestimonyOfficers();
       onTestimonyAttendanceCongregationChange();
+      loadAttendanceHistory();
       loadTestimonyRecords();
     }
 
@@ -9129,7 +9215,10 @@
         visitorsId: 'testimony-visitors',
         statusId: 'testimony-status',
         formId: 'testimony-attendance-form',
-        afterSave: loadTestimonyMembers
+        afterSave: async () => {
+          await loadTestimonyMembers();
+          await loadAttendanceHistory();
+        }
       });
     }
 
