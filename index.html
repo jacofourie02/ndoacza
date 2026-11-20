@@ -2155,6 +2155,7 @@
               <p class="muted-note">Manage Overseerships and their congregations. A congregation can be deleted only when no records refer to it.</p>
               <p class="muted-note">Congregation controls require the <code>supabase-system-admin-congregation-management.sql</code> migration to be applied in Supabase.</p>
               <p class="muted-note">Multi-congregation Elder and Priest assignments require the <code>supabase-officer-multi-congregation-assignments.sql</code> migration.</p>
+              <p class="muted-note">Multi-Overseership Prophet and Evangelist assignments require the <code>20261120100000_prophet_evangelist_multi_overseership.sql</code> migration.</p>
             </div>
             <div class="inline-actions">
               <button type="button" class="btn btn-secondary" onclick="loadOverseershipManagement()">Refresh List</button>
@@ -2193,6 +2194,23 @@
               </div>
             </div>
             <p id="officer-congregation-assignment-status" class="muted-note" role="status" aria-live="polite"></p>
+          </section>
+          <section id="officer-overseership-assignment-panel" class="dash-card" hidden style="margin:16px 0;background:#f5f8fb;">
+            <h4 style="margin:0 0 6px;">Prophet and Evangelist Overseership Assignments</h4>
+            <p class="muted-note">Select the additional Overseerships this Prophet or Evangelist serves. They will be able to switch between their home Overseership and these assignments.</p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="officer-overseership-assignment-member">Prophet or Evangelist</label>
+                <select id="officer-overseership-assignment-member" onchange="renderOfficerOverseershipAssignmentOptions()">
+                  <option value="">-- Select an Officer --</option>
+                </select>
+              </div>
+              <div id="officer-overseership-assignment-options" class="form-group" style="grid-column:1/-1;"></div>
+              <div class="inline-actions" style="grid-column:1/-1;">
+                <button type="button" class="btn btn-primary" onclick="saveOfficerOverseershipAssignments()">Save Assignments</button>
+              </div>
+            </div>
+            <p id="officer-overseership-assignment-status" class="muted-note" role="status" aria-live="polite"></p>
           </section>
           <p id="overseership-management-status" class="muted-note" role="status" aria-live="polite"></p>
           <div class="table-container">
@@ -2490,6 +2508,7 @@
     let isSystemAdmin = false;
     let currentUserIsOverseer = false;
     let currentUserRoleGroup = '';
+    let currentUserCanSwitchOverseership = false;
     let currentUserIsUnderdeacon = false;
     let currentUserIsPriest = false;
     let isApostle = false;
@@ -2528,6 +2547,9 @@
     let cachedOverseers = [];
     let cachedOfficerCongregationAssignments = [];
     let managedOfficerAssignmentCandidates = [];
+    let cachedOverseerships = [];
+    let cachedOfficerOverseershipAssignments = [];
+    let managedOverseershipOfficerCandidates = [];
     let cachedHigherOfficers = [];
     let cachedPriestsAndUnderdeacons = [];
     let cachedHospitalVisits = [];
@@ -2909,6 +2931,7 @@
           currentUser = null;
           currentUserProfile = null;
           currentUserRoleGroup = '';
+          currentUserCanSwitchOverseership = false;
           currentUserIsUnderdeacon = false;
           currentUserIsPriest = false;
           loginWrapper.style.display = 'flex';
@@ -2923,6 +2946,7 @@
         currentUser = null;
         currentUserProfile = null;
         currentUserRoleGroup = '';
+        currentUserCanSwitchOverseership = false;
         currentUserIsUnderdeacon = false;
         currentUserIsPriest = false;
         loginWrapper.style.display = 'flex';
@@ -3092,22 +3116,13 @@
       if (!label) return;
       let text = '';
       try {
-        const email = String(currentUser?.email || '').trim();
-        if (email) {
-          const { data: members, error } = await supabaseClient
-            .from('members')
-            .select('role_group, surname')
-            .ilike('email', email)
-            .eq('is_active', true)
-            .eq('is_deceased', false)
-            .limit(2);
-          if (error) throw error;
-          const member = members?.length === 1 ? members[0] : null;
-          if (member) {
-            currentUserRoleGroup = String(member.role_group || '');
-            currentUserIsOverseer = ['Overseer', 'Overseer Sister'].includes(member.role_group);
-            text = `${member.role_group || ''} ${member.surname || ''}`.trim();
-          }
+        const { data: members, error } = await supabaseClient.rpc('current_multi_overseership_officer');
+        if (error) throw error;
+        const member = Array.isArray(members) && members.length === 1 ? members[0] : null;
+        if (member) {
+          currentUserRoleGroup = String(member.role_group || '');
+          currentUserIsOverseer = ['Overseer', 'Overseer Sister'].includes(member.role_group);
+          text = `${member.role_group || ''} ${member.surname || ''}`.trim();
         }
       } catch (error) {
         console.warn('Could not look up the signed-in officer:', error);
@@ -3141,37 +3156,40 @@
       const { data: apostleData } = await supabaseClient.rpc('current_apostle');
       apostleInfo = apostleData || null;
       document.body.classList.toggle('view-only', isApostle);
-      const canViewAllOverseerships = isSystemAdmin || isApostle;
       currentUserProfile = data;
       await showSignedInOfficer(data);
       configureDashboardRoleAccess();
       configureMemberCsvControls();
       const activityNav = document.getElementById('admin-activity-nav');
       if (activityNav) activityNav.hidden = !isAdministrator() || isUnderdeacon();
-      let overseershipQuery = supabaseClient
-        .from('overseerships')
-        .select('overseership_id, overseership_name, overseer_name');
-      overseershipQuery = canViewAllOverseerships
-        ? overseershipQuery.order('overseership_id')
-        : overseershipQuery.eq('overseership_id', String(data.overseership_id));
-      const { data: overseershipRows, error: overseershipError } = await overseershipQuery;
+      const { data: overseershipRows, error: overseershipError } = await supabaseClient.rpc(
+        'list_accessible_overseerships'
+      );
       if (overseershipError) throw overseershipError;
       const overseershipById = new Map((overseershipRows || []).map(item =>
         [String(item.overseership_id), item]
       ));
-      const overseership = overseershipById.get(String(data.overseership_id)) ||
-        OVERSEERSHIPS.find(item => item.id === String(data.overseership_id));
-      const selector = document.getElementById('current-overseership-select');
-      const assignedId = String(data.overseership_id);
-      const availableOverseerships = canViewAllOverseerships
-        ? (overseershipRows || []).map(item => ({
-          id: String(item.overseership_id),
-          name: item.overseership_name || `Overseership ${item.overseership_id}`
-        }))
-        : OVERSEERSHIPS.filter(item => item.id === assignedId);
-      if (!availableOverseerships.some(item => item.id === assignedId)) {
-        availableOverseerships.push({ id: assignedId, name: overseership ? overseership.name : `Overseership ${assignedId}` });
+      const availableOverseerships = (overseershipRows || []).map(item => ({
+        id: String(item.overseership_id),
+        name: item.overseership_name || `Overseership ${item.overseership_id}`
+      }));
+      let assignedId = String(data.overseership_id);
+      if (!overseershipById.has(assignedId)) {
+        const homeOverseership = availableOverseerships[0];
+        if (!homeOverseership || isSystemAdmin || isApostle) {
+          throw new Error('Your profile is not authorized for its selected Overseership. Contact a System Admin.');
+        }
+        const { error: switchError } = await supabaseClient.rpc('switch_officer_overseership', {
+          target_overseership_id: homeOverseership.id
+        });
+        if (switchError) throw switchError;
+        data.overseership_id = homeOverseership.id;
+        data.congregation_id = null;
+        assignedId = homeOverseership.id;
       }
+      const selector = document.getElementById('current-overseership-select');
+      currentUserCanSwitchOverseership = isSystemAdmin || isApostle ||
+        availableOverseerships.length > 1;
       const activityFilterGroup = document.getElementById('admin-activity-overseership-filter-group');
       const activityFilter = document.getElementById('admin-activity-overseership-filter');
       if (activityFilterGroup && activityFilter) {
@@ -3186,7 +3204,7 @@
         return `<option value="${escapeHospitalHtml(item.id)}">${escapeHospitalHtml(item.name)}</option>`;
       }).join('');
       selector.value = String(data.overseership_id);
-      selector.disabled = !canViewAllOverseerships || isUnderdeacon();
+      selector.disabled = !currentUserCanSwitchOverseership || isUnderdeacon();
       document.getElementById('admin-header-overseership-picker').hidden = isUnderdeacon() || isApostle;
       const workspaceName = `Overseership ${assignedId}`;
       document.getElementById('app-title').textContent = workspaceName;
@@ -3223,7 +3241,7 @@
     async function switchAdminOverseership() {
       const selector = document.getElementById('current-overseership-select');
       const targetOverseershipId = selector.value;
-      if (isUnderdeacon() || !(isSystemAdmin || isApostle) || !targetOverseershipId ||
+      if (isUnderdeacon() || !currentUserCanSwitchOverseership || !targetOverseershipId ||
           targetOverseershipId === String(currentUserProfile.overseership_id)) return;
 
       const sundaySchoolOpen = document.getElementById('view-sunday-school').classList.contains('active');
@@ -3244,7 +3262,11 @@
       selector.disabled = true;
       try {
         const { error } = await supabaseClient.rpc(
-          isSystemAdmin ? 'switch_system_admin_overseership' : 'switch_apostle_overseership',
+          isSystemAdmin
+            ? 'switch_system_admin_overseership'
+            : isApostle
+            ? 'switch_apostle_overseership'
+            : 'switch_officer_overseership',
           { target_overseership_id: targetOverseershipId }
         );
         if (error) throw error;
@@ -3264,7 +3286,7 @@
         selector.value = String(currentUserProfile.overseership_id);
         window.alert(`Could not switch overseership: ${error.message || 'Unexpected error.'}`);
       } finally {
-        selector.disabled = !(isSystemAdmin || isApostle);
+        selector.disabled = !currentUserCanSwitchOverseership || isUnderdeacon();
       }
     }
 
@@ -4668,6 +4690,7 @@
         const { data, error } = await supabaseClient.rpc('system_admin_list_overseerships');
         if (error) throw error;
         const overseerships = data || [];
+        cachedOverseerships = overseerships;
         const overseershipIds = new Set(overseerships.map(overseership =>
           String(overseership.overseership_id || '')
         ));
@@ -4706,7 +4729,25 @@
             String(congregation.overseership_id) === selectedOverseershipId
           )
         );
+        const { data: overseershipAssignments, error: overseershipAssignmentsError } =
+          await supabaseClient.rpc('system_admin_list_officer_overseership_assignments');
+        if (overseershipAssignmentsError) throw overseershipAssignmentsError;
+        cachedOfficerOverseershipAssignments = overseershipAssignments || [];
+        managedOverseershipOfficerCandidates = allMembers
+          .filter(member =>
+            member.is_active === true &&
+            !member.is_deceased &&
+            ['Prophet', 'Prophet Sister', 'Evangelist', 'Evangelist Sister'].includes(member.role_group)
+          )
+          .map(member => {
+            const home = congregations.find(congregation =>
+              String(congregation.congregation_id) === String(member.congregation_id)
+            );
+            return { ...member, home_overseership_id: String(home?.overseership_id || '') };
+          })
+          .filter(member => member.home_overseership_id);
         renderOfficerCongregationAssignmentMembers();
+        renderOfficerOverseershipAssignmentMembers();
         const congregationGroups = new Map();
         const memberGroups = new Map();
         (congregations || []).forEach(congregation => {
@@ -4964,6 +5005,100 @@
         status.textContent = `Congregation assignments for ${formatOfficerName(officer)} were saved.`;
       } catch (error) {
         status.textContent = `Could not save congregation assignments: ${error.message || 'Unexpected error.'}`;
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    function renderOfficerOverseershipAssignmentMembers() {
+      const panel = document.getElementById('officer-overseership-assignment-panel');
+      const select = document.getElementById('officer-overseership-assignment-member');
+      if (!panel || !select) return;
+      panel.hidden = !isSystemAdmin;
+      if (!isSystemAdmin) return;
+
+      const selectedId = select.value;
+      const candidates = [...managedOverseershipOfficerCandidates].sort((left, right) =>
+        formatOfficerName(left).localeCompare(formatOfficerName(right))
+      );
+      select.innerHTML = '<option value="">-- Select an Officer --</option>' + candidates.map(officer => {
+        const home = cachedOverseerships.find(item =>
+          String(item.overseership_id) === officer.home_overseership_id
+        );
+        const label = `${formatOfficerName(officer)} — Home: ${home?.overseership_name || officer.home_overseership_id}`;
+        return `<option value="${escapeHospitalHtml(officer.member_id)}">${escapeHospitalHtml(label)}</option>`;
+      }).join('');
+      select.value = candidates.some(officer => String(officer.member_id) === selectedId)
+        ? selectedId
+        : '';
+      renderOfficerOverseershipAssignmentOptions();
+    }
+
+    function renderOfficerOverseershipAssignmentOptions() {
+      const select = document.getElementById('officer-overseership-assignment-member');
+      const options = document.getElementById('officer-overseership-assignment-options');
+      if (!select || !options) return;
+      const officer = managedOverseershipOfficerCandidates.find(member =>
+        String(member.member_id) === String(select.value)
+      );
+      if (!officer) {
+        options.innerHTML = '<span class="muted-note">Select a Prophet or Evangelist to manage additional Overseerships.</span>';
+        return;
+      }
+
+      const assignedIds = new Set(cachedOfficerOverseershipAssignments
+        .filter(assignment => String(assignment.officer_member_id) === String(officer.member_id))
+        .map(assignment => String(assignment.overseership_id)));
+      const additionalOverseerships = cachedOverseerships.filter(overseership =>
+        String(overseership.overseership_id) !== officer.home_overseership_id
+      );
+      options.innerHTML = `<strong>Home Overseership:</strong> ${escapeHospitalHtml(
+        cachedOverseerships.find(item =>
+          String(item.overseership_id) === officer.home_overseership_id
+        )?.overseership_name || officer.home_overseership_id
+      )}<br>
+        <strong>Additional Overseerships served:</strong>
+        ${additionalOverseerships.length
+          ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-top:8px;">${additionalOverseerships.map(overseership =>
+              `<label class="radio-label" style="padding:8px;border:1px solid var(--dash-border);border-radius:4px;"><input type="checkbox" class="officer-service-overseership-choice" value="${escapeHospitalHtml(overseership.overseership_id)}" ${assignedIds.has(String(overseership.overseership_id)) ? 'checked' : ''}> ${escapeHospitalHtml(overseership.overseership_name || overseership.overseership_id)}</label>`
+            ).join('')}</div>`
+          : '<p class="muted-note">There are no other Overseerships.</p>'}`;
+    }
+
+    async function saveOfficerOverseershipAssignments() {
+      const officerSelect = document.getElementById('officer-overseership-assignment-member');
+      const status = document.getElementById('officer-overseership-assignment-status');
+      const officer = managedOverseershipOfficerCandidates.find(member =>
+        String(member.member_id) === String(officerSelect?.value || '')
+      );
+      if (!isSystemAdmin || !officer) {
+        status.textContent = 'Select a Prophet or Evangelist. System Admin access is required.';
+        return;
+      }
+
+      const button = document.querySelector('#officer-overseership-assignment-panel button');
+      const overseershipIds = Array.from(document.querySelectorAll('.officer-service-overseership-choice:checked'))
+        .map(input => input.value);
+      if (button) button.disabled = true;
+      status.textContent = `Saving Overseership assignments for ${formatOfficerName(officer)}...`;
+      try {
+        const { error } = await supabaseClient.rpc('system_admin_set_officer_overseership_assignments', {
+          target_officer_member_id: officer.member_id,
+          target_overseership_ids: overseershipIds
+        });
+        if (error) throw error;
+
+        const { data, error: assignmentError } = await supabaseClient.rpc(
+          'system_admin_list_officer_overseership_assignments'
+        );
+        if (assignmentError) throw assignmentError;
+        cachedOfficerOverseershipAssignments = data || [];
+        renderOfficerOverseershipAssignmentMembers();
+        officerSelect.value = String(officer.member_id);
+        renderOfficerOverseershipAssignmentOptions();
+        status.textContent = `Overseership assignments for ${formatOfficerName(officer)} were saved.`;
+      } catch (error) {
+        status.textContent = `Could not save Overseership assignments: ${error.message || 'Unexpected error.'}`;
       } finally {
         if (button) button.disabled = false;
       }
