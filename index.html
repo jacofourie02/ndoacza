@@ -1503,6 +1503,7 @@
                 <option value="Wednesday Financial Meeting">Wednesday Financial Meeting</option>
                 <option value="Thursday Testimony">Thursday Testimony</option>
                 <option value="Friday Choir/Play">Friday Choir/Play</option>
+                <option value="Senior Citizens Activity">Senior Citizens Activity</option>
                 <option value="Saturday Activity">Saturday Activity</option>
               </select>
             </div>
@@ -2105,7 +2106,7 @@
           <div class="section-heading">
             <div>
               <h3 style="margin:0;">Operations: Account Invitations</h3>
-              <p class="muted-note">Invite active Elders, Priests, and Underdeacons in your authorized Overseership. New accounts receive an invitation to set a password; existing accounts receive a password-reset email.</p>
+              <p class="muted-note">Invite active Elders, Priests, Underdeacons, Overseers, Prophets, and Evangelists in your authorized Overseership. New accounts receive an invitation to set a password; existing accounts receive a password-reset email.</p>
               <p class="muted-note">Invited users receive standard officer access for their congregation. This does not grant Overseership administrator or cross-congregation permissions.</p>
               <p id="account-invitation-overseership" class="muted-note" aria-live="polite"></p>
             </div>
@@ -5262,7 +5263,7 @@
         if (error) throw error;
         const members = data?.members || [];
         if (!members.length) {
-          status.textContent = 'No active Elders, Priests, or Underdeacons with valid email addresses were found in this Overseership.';
+          status.textContent = 'No active Elders, Priests, Underdeacons, Overseers, Prophets, or Evangelists with valid email addresses were found in this Overseership. Confirm that the manage-elder-access Edge Function is up to date.';
           return;
         }
         target.innerHTML = `<table class="data-table"><thead><tr><th>Select</th><th>Member</th><th>Role</th><th>Congregation</th><th>Email</th></tr></thead><tbody>${
