@@ -898,7 +898,31 @@
       #view-reporting .dash-card { box-shadow: none; border-color: #bbb; }
       #view-reporting .chart-container { break-inside: avoid; }
       #view-reporting table { font-size: 9pt; }
+      body.apostle-print #view-reporting { display: none !important; }
+      body.apostle-print #view-apostleship,
+      body.apostle-print #view-apostleship * { visibility: visible; }
+      body.apostle-print #view-apostleship {
+        display: block !important; position: absolute; inset: 0; width: 100%; margin: 0;
+      }
+      body.apostle-print #view-apostleship .apostle-actions,
+      body.apostle-print #view-apostleship #apostle-export-status,
+      body.apostle-print #view-apostleship #apostle-drill-tabs,
+      body.apostle-print #view-apostleship #apostle-drill .section-heading button { display: none !important; }
+      body.apostle-print #view-apostleship .apostle-dashboard,
+      body.apostle-print #view-apostleship .apostle-panel { box-shadow: none; padding: 8px; }
+      body.apostle-print #view-apostleship .apostle-insights { display: block; }
+      body.apostle-print #view-apostleship .table-container { overflow: visible; }
+      body.apostle-print #view-apostleship table { width: 100%; font-size: 7pt; }
+      body.apostle-print #view-apostleship th,
+      body.apostle-print #view-apostleship td { padding: 3px; overflow-wrap: anywhere; }
+      body.apostle-print #view-apostleship tr { break-inside: avoid; }
+      body.apostle-print #view-apostleship canvas { max-height: 135mm !important; max-width: 100%; }
+      body.apostle-print #view-apostleship .apostle-link {
+        border: 0; padding: 0; color: inherit; background: none; font: inherit;
+      }
     }
+    @page apostle-report { size: landscape; margin: 10mm; }
+    @media print { body.apostle-print { page: apostle-report; } }
     body.view-only form.form-grid,
     body.view-only table .btn,
     body.view-only #admin-dummy-data-card,
@@ -2146,6 +2170,8 @@
               <button type="button" class="btn btn-secondary" onclick="setApostlePeriod('month')">This month</button>
               <button type="button" class="btn btn-secondary" onclick="setApostlePeriod('year')">Year to date</button>
               <button type="button" class="btn btn-secondary" onclick="loadApostleDashboard()">Refresh</button>
+              <button type="button" class="btn btn-secondary" onclick="printApostlePdf()">Save as PDF</button>
+              <button type="button" class="btn btn-secondary" onclick="exportApostlePowerPoint()">Save as PowerPoint</button>
             </div>
           </div>
           <div class="apostle-period">
@@ -2159,6 +2185,7 @@
             </div>
           </div>
           <p id="apostle-status" class="muted-note" role="status" aria-live="polite"></p>
+          <p id="apostle-export-status" class="muted-note" role="status" aria-live="polite"></p>
           <div id="apostle-summary" hidden>
             <div class="apostle-panel">
               <h4 class="apostle-panel-heading">At a glance</h4>
@@ -4496,6 +4523,8 @@
     let apostleTitheChart = null;
     let apostleOverseershipTitheChart = null;
     let apostleSoulsHistoryChart = null;
+    let apostleExportPeriod = null;
+    let apostlePowerPointBusy = false;
 
     function canViewApostleDashboard() {
       return isApostle || isSystemAdmin;
@@ -4868,6 +4897,8 @@
     async function loadApostleDashboard() {
       if (!canViewApostleDashboard()) return;
       const requestId = ++apostleLoadRequestId;
+      apostleExportPeriod = null;
+      document.getElementById('apostle-export-status').textContent = '';
       const start = document.getElementById('apostle-start-date').value;
       const end = document.getElementById('apostle-end-date').value;
       const status = document.getElementById('apostle-status');
@@ -4896,11 +4927,172 @@
           loadApostleTitheChart(start, end, requestId),
           loadApostleSoulsHistory(start, end, requestId, groupApostleRowsByOverseership(apostleReport))
         ]);
+        if (requestId === apostleLoadRequestId) apostleExportPeriod = { start, end };
       } catch (error) {
         if (requestId !== apostleLoadRequestId) return;
         console.error('Could not load the Apostleship dashboard:', error);
         summary.hidden = true;
         status.textContent = `Could not load the Apostleship dashboard: ${error.message || 'Unexpected error.'} Apply the Apostleship executive report migration.`;
+      }
+    }
+
+    function getApostleExportPeriod() {
+      const start = document.getElementById('apostle-start-date').value;
+      const end = document.getElementById('apostle-end-date').value;
+      if (!canViewApostleDashboard() ||
+          !document.getElementById('view-apostleship').classList.contains('active') ||
+          document.getElementById('apostle-summary').hidden ||
+          !apostleExportPeriod || apostleExportPeriod.start !== start || apostleExportPeriod.end !== end) {
+        throw new Error('Open the Apostleship dashboard and wait for the selected date range to finish loading.');
+      }
+      return { start, end };
+    }
+
+    function printApostlePdf() {
+      const status = document.getElementById('apostle-export-status');
+      try {
+        getApostleExportPeriod();
+        const details = Array.from(document.querySelectorAll('#view-apostleship details:not([hidden])'));
+        const previouslyOpen = details.map(item => item.open);
+        details.forEach(item => { item.open = true; });
+        document.body.classList.add('apostle-print');
+        const restore = () => {
+          details.forEach((item, index) => { item.open = previouslyOpen[index]; });
+          document.body.classList.remove('apostle-print');
+          window.removeEventListener('afterprint', restore);
+        };
+        window.addEventListener('afterprint', restore);
+        try {
+          window.print();
+        } catch (error) {
+          restore();
+          throw error;
+        }
+        status.textContent = 'In the print dialog, choose Save as PDF.';
+      } catch (error) {
+        status.textContent = `Could not prepare PDF: ${error.message || 'Unexpected error.'}`;
+      }
+    }
+
+    function loadApostlePowerPointLibrary() {
+      if (typeof PptxGenJS !== 'undefined') return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js';
+        script.onload = () => {
+          if (typeof PptxGenJS === 'undefined') reject(new Error('The PowerPoint library did not initialise.'));
+          else resolve();
+        };
+        script.onerror = () => {
+          script.remove();
+          reject(new Error('The PowerPoint library could not be loaded. Check your internet connection and try again.'));
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    function addApostleExportTable(pptx, title, table, period) {
+      const rows = Array.from(table.querySelectorAll('thead tr, tbody tr, tfoot tr'), row =>
+        Array.from(row.cells, cell => cell.textContent.replace(/\s+/g, ' ').trim()));
+      if (!rows.length) return;
+      const headers = rows[0];
+      const columns = headers.length;
+      const firstWidth = columns === 1 ? 12.13 : columns === 2 ? 6 : columns === 3 ? 5 : 2.35;
+      const widths = headers.map((_, index) => index === 0 ? firstWidth : (12.13 - firstWidth) / (columns - 1));
+      const body = rows.slice(1);
+      const pages = Math.max(1, Math.ceil(body.length / 11));
+      for (let page = 0; page < pages; page++) {
+        const slide = addApostleExportSlide(pptx, pages > 1 ? `${title} (${page + 1}/${pages})` : title, period);
+        const pageRows = [headers, ...body.slice(page * 11, (page + 1) * 11)];
+        pageRows.forEach((row, rowIndex) => {
+          let x = 0.6;
+          const height = rowIndex === 0 ? 0.65 : 0.42;
+          const y = rowIndex === 0 ? 1.25 : 1.9 + (rowIndex - 1) * 0.42;
+          widths.forEach((width, column) => {
+            slide.addText(row[column] || '', {
+              x, y, w: width, h: height, margin: 0.04, fontFace: 'Aptos',
+              fontSize: columns > 6 ? 9 : 12, fit: 'shrink', valign: 'mid',
+              bold: rowIndex === 0, color: rowIndex === 0 ? 'FFFFFF' : '263D53',
+              fill: { color: rowIndex === 0 ? '496D89' : rowIndex % 2 ? 'F4F8FB' : 'FFFFFF' },
+              line: { color: 'E1E8EF', width: 0.5 }
+            });
+            x += width;
+          });
+        });
+      }
+    }
+
+    function addApostleExportSlide(pptx, title, period) {
+      const slide = pptx.addSlide();
+      slide.background = { color: 'FFFFFF' };
+      slide.addText(title, { x: 0.6, y: 0.28, w: 12.1, h: 0.5, fontFace: 'Aptos', fontSize: 24, bold: true, color: '233750', fit: 'shrink' });
+      slide.addText(`Apostleship 100 | ${period.start} to ${period.end}`, {
+        x: 0.6, y: 7.1, w: 12.1, h: 0.2, fontFace: 'Aptos', fontSize: 9, color: '52677B'
+      });
+      return slide;
+    }
+
+    function addApostleExportChart(pptx, title, description, areaId, canvasId, statusId, chart, period) {
+      const slide = addApostleExportSlide(pptx, title, period);
+      const status = document.getElementById(statusId).textContent.trim();
+      slide.addText([description, status].filter(Boolean).join('\n'), {
+        x: 0.6, y: 0.9, w: 12.1, h: 0.6, fontFace: 'Aptos', fontSize: 11,
+        color: '52677B', fit: 'shrink', valign: 'top'
+      });
+      if (!document.getElementById(areaId).hidden && chart) {
+        chart.update('none');
+        const canvas = document.getElementById(canvasId);
+        const scale = Math.min(12.1 / canvas.width, 5.2 / canvas.height);
+        slide.addImage({ data: canvas.toDataURL('image/png'), x: 0.6, y: 1.65, w: canvas.width * scale, h: canvas.height * scale });
+      }
+    }
+
+    async function exportApostlePowerPoint() {
+      const status = document.getElementById('apostle-export-status');
+      if (apostlePowerPointBusy) return;
+      apostlePowerPointBusy = true;
+      try {
+        getApostleExportPeriod();
+        status.textContent = 'Preparing PowerPoint...';
+        await loadApostlePowerPointLibrary();
+        const period = getApostleExportPeriod();
+        const pptx = new PptxGenJS();
+        pptx.layout = 'LAYOUT_WIDE';
+        pptx.subject = 'Apostleship executive dashboard';
+        const summary = addApostleExportSlide(pptx, 'Apostleship 100 Executive Dashboard', period);
+        summary.addText('Souls and officers are current totals. The reporting period applies to tithes, Prophetic families and souls history. Prophetic families are counted once per period.', {
+          x: 0.6, y: 0.95, w: 12.1, h: 0.55, fontFace: 'Aptos', fontSize: 13, color: '52677B', fit: 'shrink'
+        });
+        document.querySelectorAll('#apostle-kpis .kpi-card').forEach((card, index) => {
+          const x = 0.6 + (index % 3) * 4.1;
+          const y = 1.75 + Math.floor(index / 3) * 1.55;
+          summary.addText(`${card.querySelector('.kpi-title').textContent.trim()}\n${card.querySelector('.kpi-value').textContent.trim()}`, {
+            x, y, w: 3.9, h: 1.25, margin: 0.18, fontFace: 'Aptos', fontSize: 18,
+            bold: true, color: '20394C', fill: { color: ['DFF3EE', 'E1EBF9', 'F1E4F5', 'FAE9E3'][index % 4] }, fit: 'shrink'
+          });
+        });
+        addApostleExportChart(pptx, 'Tithes over time', 'Calendar-month totals for the selected dates; the first and last months may be partial.',
+          'apostle-tithe-chart-area', 'apostle-tithe-chart', 'apostle-tithe-chart-status', apostleTitheChart, period);
+        if (!document.getElementById('apostle-tithe-chart-table').hidden)
+          addApostleExportTable(pptx, 'Monthly tithes', document.getElementById('apostle-tithe-chart-table').querySelector('table'), period);
+        addApostleExportChart(pptx, 'Tithes by Overseership', 'Totals for the selected period.',
+          'apostle-overseership-tithe-chart-area', 'apostle-overseership-tithe-chart', 'apostle-overseership-tithe-status', apostleOverseershipTitheChart, period);
+        addApostleExportTable(pptx, 'Officers by role', document.getElementById('apostle-officer-body').closest('table'), period);
+        addApostleExportTable(pptx, 'By Overseership', document.getElementById('apostle-overseership-body').closest('table'), period);
+        addApostleExportChart(pptx, 'Monthly souls by Overseership', 'Latest available daily snapshot in each month; missing months are not estimated.',
+          'apostle-souls-history-area', 'apostle-souls-history-chart', 'apostle-souls-history-status', apostleSoulsHistoryChart, period);
+        if (!document.getElementById('apostle-souls-history-table').hidden)
+          addApostleExportTable(pptx, 'Monthly souls and snapshot dates', document.getElementById('apostle-souls-history-table').querySelector('table'), period);
+        if (!document.getElementById('apostle-drill').hidden)
+          addApostleExportTable(pptx, document.getElementById('apostle-drill-title').textContent,
+            document.getElementById('apostle-drill-table'), period);
+        await pptx.writeFile({ fileName: `apostleship_dashboard_${period.start}_to_${period.end}.pptx` });
+        status.textContent = 'PowerPoint download prepared.';
+      } catch (error) {
+        console.error('Could not export Apostleship PowerPoint:', error);
+        status.textContent = `Could not save PowerPoint: ${error.message || 'Unexpected error.'}`;
+      } finally {
+        apostlePowerPointBusy = false;
       }
     }
 
