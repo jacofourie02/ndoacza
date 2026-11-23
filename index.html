@@ -502,6 +502,22 @@
     th { background-color: #f5f8fb; font-size: 0.75rem; text-transform: uppercase; color: var(--dash-text-muted); font-weight: 600; letter-spacing: 0.5px; }
     tr:hover td { background-color: #f8fafc; }
 
+    #view-member-capture .table-container table { table-layout: fixed; width: 100%; }
+    #view-member-capture .table-container table th:nth-child(1),
+    #view-member-capture .table-container table td:nth-child(1) { width: 12%; }
+    #view-member-capture .table-container table th:nth-child(2),
+    #view-member-capture .table-container table td:nth-child(2) { width: 12%; }
+    #view-member-capture .table-container table th:nth-child(3),
+    #view-member-capture .table-container table td:nth-child(3) { width: 18%; }
+    #view-member-capture .table-container table th:nth-child(4),
+    #view-member-capture .table-container table td:nth-child(4) { width: 18%; }
+    #view-member-capture .table-container table th:nth-child(5),
+    #view-member-capture .table-container table td:nth-child(5) { width: 18%; }
+    #view-member-capture .table-container table th:nth-child(6),
+    #view-member-capture .table-container table td:nth-child(6) { width: 12%; }
+    #view-member-capture .table-container table th:nth-child(7),
+    #view-member-capture .table-container table td:nth-child(7) { width: 10%; }
+
     .prophetic-record-groups { display: grid; gap: 10px; }
     .prophetic-record-group { border: 1px solid var(--dash-border); border-radius: 12px; overflow: hidden; }
     .prophetic-record-group summary { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; background: #f5f8fb; }
@@ -1257,7 +1273,49 @@
           <form id="add-member-form" onsubmit="handleCreateMember(event)" class="form-grid">
             <div class="form-group">
               <label>Member / Officer Role</label>
-              <select id="new-role-group" onchange="toggleHierarchyFields('new'); checkSisterFields('new'); populateMemberOfficerOptions('new');"></select>
+              <select id="new-role-group" onchange="toggleHierarchyFields('new'); checkSisterFields('new'); populateMemberOfficerOptions('new'); toggleAuxiliaryPowerFields('new'); togglePriestChairmanFields('new');"></select>
+            </div>
+            <div class="form-group" id="new-auxiliary-power-question" style="display:none;">
+              <label>Serves as Auxiliary Power?</label>
+              <div class="radio-group">
+                <label class="radio-label"><input type="radio" name="new-is-auxiliary-power" value="true" onchange="toggleAuxiliaryPowerDropdown('new')"> Yes</label>
+                <label class="radio-label"><input type="radio" name="new-is-auxiliary-power" value="false" onchange="toggleAuxiliaryPowerDropdown('new')" checked> No</label>
+              </div>
+            </div>
+            <div class="form-group" id="new-auxiliary-power-role-group" style="display:none;">
+              <label>Auxiliary Power Role</label>
+              <select id="new-auxiliary-power-role">
+                <option value="">-- Select Role --</option>
+                <option value="Secretary">Secretary</option>
+                <option value="Treasurer">Treasurer</option>
+                <option value="Auditor 1">Auditor 1</option>
+                <option value="Auditor 2">Auditor 2</option>
+                <option value="Doorkeeper">Doorkeeper</option>
+                <option value="Sunday School Teacher Group 1">Sunday School Teacher Group 1</option>
+                <option value="Sunday School Teacher Group 2">Sunday School Teacher Group 2</option>
+                <option value="Sunday School Teacher Group 3">Sunday School Teacher Group 3</option>
+                <option value="Confirmation Class">Confirmation Class</option>
+                <option value="Organist 1">Organist 1</option>
+                <option value="Organist 2">Organist 2</option>
+                <option value="Organist 3">Organist 3</option>
+                <option value="Choir Conductor 1">Choir Conductor 1</option>
+                <option value="Choir Conductor 2">Choir Conductor 2</option>
+              </select>
+            </div>
+            <div class="form-group" id="new-priest-chairman-question" style="display:none;">
+              <label>Priest Chairman Status?</label>
+              <div class="radio-group">
+                <label class="radio-label"><input type="radio" name="new-is-chairman" value="true" onchange="togglePriestChairmanDropdown('new')"> Yes</label>
+                <label class="radio-label"><input type="radio" name="new-is-chairman" value="false" onchange="togglePriestChairmanDropdown('new')" checked> No</label>
+              </div>
+            </div>
+            <div class="form-group" id="new-priest-chairman-type-group" style="display:none;">
+              <label>Chairman Type</label>
+              <select id="new-priest-chairman-type">
+                <option value="">-- Select Position --</option>
+                <option value="Chairman">Chairman</option>
+                <option value="Vice-Chairman">Vice-Chairman</option>
+              </select>
             </div>
             <div class="form-group" id="new-officer-assignment-role-group" style="display:none;">
               <label>Officer Assignment Role</label>
@@ -1286,6 +1344,7 @@
 
             <div class="form-group"><label>Contact Number</label><input type="text" id="new-contact" placeholder="e.g. 071 234 5678"></div>
             <div class="form-group"><label>Address</label><input type="text" id="new-address" placeholder="e.g. 12 Main Road, Pretoria"></div>
+            <div class="form-group"><label>Previous Address</label><input type="text" id="new-previous-address" placeholder="e.g. 24 Oak Avenue, Johannesburg"></div>
             <div class="form-group initial-congregation-group">
               <label for="new-congregation">Initial Congregation</label>
               <select id="new-congregation" onchange="populateMemberOfficerOptions('new')"></select>
@@ -2385,7 +2444,49 @@
       <form id="edit-member-form" onsubmit="handleUpdateMember(event)" class="form-grid">
         <input type="hidden" id="edit-member-id">
         <p id="edit-linked-child-note" class="muted-note" style="grid-column:1/-1;" hidden>Congregation and family details are managed on the family head. Youth cannot be selected as a new role.</p>
-        <div class="form-group"><label>Member / Officer Role</label><select id="edit-role-group" onchange="toggleHierarchyFields('edit'); checkSisterFields('edit'); populateMemberOfficerOptions('edit');"></select></div>
+        <div class="form-group"><label>Member / Officer Role</label><select id="edit-role-group" onchange="toggleHierarchyFields('edit'); checkSisterFields('edit'); populateMemberOfficerOptions('edit'); toggleAuxiliaryPowerFields('edit'); togglePriestChairmanFields('edit');"></select></div>
+        <div class="form-group" id="edit-auxiliary-power-question" style="display:none;">
+          <label>Serves as Auxiliary Power?</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="edit-is-auxiliary-power" value="true" onchange="toggleAuxiliaryPowerDropdown('edit')"> Yes</label>
+            <label class="radio-label"><input type="radio" name="edit-is-auxiliary-power" value="false" onchange="toggleAuxiliaryPowerDropdown('edit')"> No</label>
+          </div>
+        </div>
+        <div class="form-group" id="edit-auxiliary-power-role-group" style="display:none;">
+          <label>Auxiliary Power Role</label>
+          <select id="edit-auxiliary-power-role">
+            <option value="">-- Select Role --</option>
+            <option value="Secretary">Secretary</option>
+            <option value="Treasurer">Treasurer</option>
+            <option value="Auditor 1">Auditor 1</option>
+            <option value="Auditor 2">Auditor 2</option>
+            <option value="Doorkeeper">Doorkeeper</option>
+            <option value="Sunday School Teacher Group 1">Sunday School Teacher Group 1</option>
+            <option value="Sunday School Teacher Group 2">Sunday School Teacher Group 2</option>
+            <option value="Sunday School Teacher Group 3">Sunday School Teacher Group 3</option>
+            <option value="Confirmation Class">Confirmation Class</option>
+            <option value="Organist 1">Organist 1</option>
+            <option value="Organist 2">Organist 2</option>
+            <option value="Organist 3">Organist 3</option>
+            <option value="Choir Conductor 1">Choir Conductor 1</option>
+            <option value="Choir Conductor 2">Choir Conductor 2</option>
+          </select>
+        </div>
+        <div class="form-group" id="edit-priest-chairman-question" style="display:none;">
+          <label>Priest Chairman Status?</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="edit-is-chairman" value="true" onchange="togglePriestChairmanDropdown('edit')"> Yes</label>
+            <label class="radio-label"><input type="radio" name="edit-is-chairman" value="false" onchange="togglePriestChairmanDropdown('edit')"> No</label>
+          </div>
+        </div>
+        <div class="form-group" id="edit-priest-chairman-type-group" style="display:none;">
+          <label>Chairman Type</label>
+          <select id="edit-priest-chairman-type">
+            <option value="">-- Select Position --</option>
+            <option value="Chairman">Chairman</option>
+            <option value="Vice-Chairman">Vice-Chairman</option>
+          </select>
+        </div>
         <div class="form-group" id="edit-officer-assignment-role-group" style="display:none;">
           <label>Officer Assignment Role</label>
           <select id="edit-officer-assignment-role" onchange="toggleHierarchyFields('edit'); populateMemberOfficerOptions('edit')"></select>
@@ -2407,6 +2508,7 @@
 
         <div class="form-group"><label>Contact Number</label><input type="text" id="edit-contact" placeholder="e.g. 071 234 5678"></div>
         <div class="form-group"><label>Address</label><input type="text" id="edit-address" placeholder="e.g. 12 Main Road, Pretoria"></div>
+        <div class="form-group"><label>Previous Address</label><input type="text" id="edit-previous-address" placeholder="e.g. 24 Oak Avenue, Johannesburg"></div>
         <div class="form-group"><label>Congregation</label><select id="edit-congregation" onchange="populateMemberOfficerOptions('edit')"></select></div>
         <div class="form-group" id="edit-priest-alloc-group" style="display:none;"><label id="edit-assigned-priest-label" for="edit-assigned-priest">Responsible Officer (Priest)</label><select id="edit-assigned-priest"><option value="">-- Select Priest --</option></select></div>
         <div class="form-group" id="edit-elder-alloc-group" style="display:none;"><label>Responsible Officer (Elder)</label><select id="edit-assigned-elder"><option value="">-- None --</option></select></div>
@@ -3991,8 +4093,11 @@
     }
 
     function isAdministrator() {
+      // Check if system admin flag is set, regardless of currentUserProfile state
+      if (isSystemAdmin) return true;
+      // Also check if currentUserProfile has admin role
       return Boolean(currentUserProfile) &&
-        (isSystemAdmin || String(currentUserProfile.role || '').toLowerCase() === 'admin');
+        String(currentUserProfile.role || '').toLowerCase() === 'admin';
     }
 
     let myInformationRequest = 0;
@@ -6294,6 +6399,52 @@
       if (sisterIdInput) sisterIdInput.required = isFamilyUnit;
     }
 
+    function toggleAuxiliaryPowerFields(prefix) {
+      const roleGroup = document.getElementById(`${prefix}-role-group`)?.value || '';
+      const questionGroup = document.getElementById(`${prefix}-auxiliary-power-question`);
+      
+      // Show question only for Brother or Sister roles
+      const isBrotherOrSister = ['Brother', 'Sister'].includes(roleGroup);
+      if (questionGroup) questionGroup.style.display = isBrotherOrSister ? 'flex' : 'none';
+      
+      // Reset and hide dropdown if role changes
+      if (!isBrotherOrSister) {
+        const auxRoleGroup = document.getElementById(`${prefix}-auxiliary-power-role-group`);
+        if (auxRoleGroup) auxRoleGroup.style.display = 'none';
+        const radio = document.querySelector(`input[name="${prefix}-is-auxiliary-power"]`);
+        if (radio) radio.checked = false;
+      }
+    }
+
+    function toggleAuxiliaryPowerDropdown(prefix) {
+      const isAuxiliaryPower = document.querySelector(`input[name="${prefix}-is-auxiliary-power"]:checked`)?.value === 'true';
+      const roleGroup = document.getElementById(`${prefix}-auxiliary-power-role-group`);
+      if (roleGroup) roleGroup.style.display = isAuxiliaryPower ? 'flex' : 'none';
+    }
+
+    function togglePriestChairmanFields(prefix) {
+      const roleGroup = document.getElementById(`${prefix}-role-group`)?.value || '';
+      const questionGroup = document.getElementById(`${prefix}-priest-chairman-question`);
+      
+      // Show question only for Priest or Priest Sister roles
+      const isPriest = ['Priest', 'Priest Sister'].includes(roleGroup);
+      if (questionGroup) questionGroup.style.display = isPriest ? 'flex' : 'none';
+      
+      // Reset and hide dropdown if role changes
+      if (!isPriest) {
+        const typeGroup = document.getElementById(`${prefix}-priest-chairman-type-group`);
+        if (typeGroup) typeGroup.style.display = 'none';
+        const radio = document.querySelector(`input[name="${prefix}-is-chairman"]`);
+        if (radio) radio.checked = false;
+      }
+    }
+
+    function togglePriestChairmanDropdown(prefix) {
+      const isChairman = document.querySelector(`input[name="${prefix}-is-chairman"]:checked`)?.value === 'true';
+      const typeGroup = document.getElementById(`${prefix}-priest-chairman-type-group`);
+      if (typeGroup) typeGroup.style.display = isChairman ? 'flex' : 'none';
+    }
+
     function getFamilyChildrenFromForm(prefix, includeWhenSingle = false) {
       const list = document.getElementById(`${prefix}-family-children-list`);
       if (!list || (!includeWhenSingle && document.getElementById(`${prefix}-is-family`)?.value === 'single_member')) return [];
@@ -6606,7 +6757,7 @@
         ['Priest', 'Priest Sister', 'Elder', 'Elder Sister'].includes(person.role_group)
       );
       const elderScope = getElderResponsibilityScope();
-      tbody.innerHTML = members.map(m => {
+      const html = members.map(m => {
         const cong = cachedCongregations.find(c => String(c.congregation_id) === String(m.congregation_id));
         const nameStr = `${m.first_name || ''} ${m.surname || ''}`.trim();
         const linkedChildren = getActiveFamilyChildren(m.member_id);
@@ -6626,6 +6777,10 @@
           (!elderScope || elderScope.memberIds.has(String(m.member_id))) &&
           ['Brother', 'Sister', 'Youth', 'Child', 'Underdeacon', 'Underdeacon Sister'].includes(m.role_group) &&
           !m.family_main_id && !m.is_deceased;
+        // Always show Edit button for active members if user can manage or is admin
+        const showEditButton = (canManage || isAdministrator()) && !m.is_deceased;
+        // Always show Archive button for active members if user can manage or is admin
+        const showArchiveButton = (canManage || isAdministrator()) && !m.is_deceased;
         return `
           <tr>
             <td><strong>${escapeHospitalHtml(m.role_group)}</strong></td>
@@ -6637,14 +6792,18 @@
               ? '<span class="status-badge status-inactive">Deceased · excluded from souls</span>'
               : '<span class="status-badge status-active">Active</span>'}</td>
             <td>
-              ${canManage && !m.is_deceased ? `<button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="openEditModal(decodeURIComponent('${encodeURIComponent(String(m.member_id))}'))">Edit</button>
-              <button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="openMoveMemberModal(decodeURIComponent('${encodeURIComponent(String(m.member_id))}'), '${escapeHospitalHtml(nameStr)}')">Archive</button>` : ''}
+              ${showEditButton ? `<button class="btn btn-secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="openEditModal(decodeURIComponent('${encodeURIComponent(String(m.member_id))}'))">Edit</button>` : ''}
+              ${showArchiveButton ? `<button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="openMoveMemberModal(decodeURIComponent('${encodeURIComponent(String(m.member_id))}'), '${escapeHospitalHtml(nameStr)}')">Archive</button>` : ''}
               ${canMoveToMain ? `<button type="button" class="btn btn-secondary" style="padding:4px 8px;font-size:0.75rem;" onclick="moveMemberToOverseershipMain(decodeURIComponent('${encodeURIComponent(String(m.member_id))}'), this)">Move to Overseership Main</button>` : ''}
-              ${canManage ? `<button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="removeMemberRecord(decodeURIComponent('${encodeURIComponent(String(m.member_id))}'))">Delete</button>` : ''}
             </td>
           </tr>
         `;
       }).join('');
+      
+      // Log first row HTML to verify it was generated
+      console.log('First 500 chars of HTML:', html.substring(0, 500));
+      console.log('Total HTML length:', html.length, 'Members count:', members.length);
+      tbody.innerHTML = html;
     }
 
     async function moveMemberToOverseershipMain(memberId, button) {
@@ -6719,6 +6878,7 @@
         sealing_date: document.getElementById('new-sealing-date').value || null,
         contact_number: document.getElementById('new-contact').value.trim() || null,
         address: document.getElementById('new-address').value.trim() || null,
+        previous_address: document.getElementById('new-previous-address').value.trim() || null,
         congregation_id: document.getElementById('new-congregation').value,
         assigned_priest_id: !roleGroup.includes('Elder') && !roleGroup.includes('Priest')
           ? document.getElementById('new-assigned-priest').value || null
@@ -6741,6 +6901,10 @@
         sister_is_deceased: false,
         has_will: document.querySelector('input[name="new-has-will"]:checked')?.value === 'true',
         burial_fund: document.getElementById('new-burial-fund').value,
+        is_auxiliary_power: ['Brother', 'Sister'].includes(roleGroup) ? document.querySelector('input[name="new-is-auxiliary-power"]:checked')?.value === 'true' : false,
+        auxiliary_power_role: ['Brother', 'Sister'].includes(roleGroup) && document.querySelector('input[name="new-is-auxiliary-power"]:checked')?.value === 'true' ? document.getElementById('new-auxiliary-power-role').value || null : null,
+        is_chairman: ['Priest', 'Priest Sister'].includes(roleGroup) ? document.querySelector('input[name="new-is-chairman"]:checked')?.value === 'true' : false,
+        chairman_type: ['Priest', 'Priest Sister'].includes(roleGroup) && document.querySelector('input[name="new-is-chairman"]:checked')?.value === 'true' ? document.getElementById('new-priest-chairman-type').value || null : null,
         is_active: true
       };
 
@@ -6784,6 +6948,8 @@
       document.getElementById('edit-congregation').disabled = linkedChild;
       document.getElementById('edit-is-family').disabled = linkedChild;
       toggleHierarchyFields('edit');
+      toggleAuxiliaryPowerFields('edit');
+      togglePriestChairmanFields('edit');
       document.getElementById('edit-officer-assignment-role').value =
         m.officer_assignment_role || m.priest_type || m.elder_type || '';
       toggleHierarchyFields('edit');
@@ -6826,9 +6992,51 @@
       document.getElementById('edit-sealing-date').value = m.sealing_date || '';
       document.getElementById('edit-contact').value = m.contact_number || '';
       document.getElementById('edit-address').value = m.address || '';
+      document.getElementById('edit-previous-address').value = m.previous_address || '';
       document.getElementById('edit-burial-fund').value = m.burial_fund || 'None';
       const hasWill = m.has_will === true || String(m.has_will).toLowerCase() === 'true';
       document.getElementById(hasWill ? 'edit-will-yes' : 'edit-will-no').checked = true;
+      
+      // Populate auxiliary power fields for edit
+      const isAuxiliaryPower = m.is_auxiliary_power === true || String(m.is_auxiliary_power).toLowerCase() === 'true';
+      const auxQuestion = document.getElementById('edit-auxiliary-power-question');
+      if (['Brother', 'Sister'].includes(m.role_group)) {
+        // Show the question
+        if (auxQuestion) auxQuestion.style.display = 'flex';
+        const auxRadios = document.getElementsByName('edit-is-auxiliary-power');
+        if (auxRadios && auxRadios.length >= 2) {
+          auxRadios[0].checked = isAuxiliaryPower;    // Yes
+          auxRadios[1].checked = !isAuxiliaryPower;   // No
+        }
+        const auxRole = document.getElementById('edit-auxiliary-power-role');
+        if (auxRole) auxRole.value = m.auxiliary_power_role || '';
+        const auxGroup = document.getElementById('edit-auxiliary-power-role-group');
+        if (auxGroup) auxGroup.style.display = isAuxiliaryPower ? 'flex' : 'none';
+      } else {
+        // Hide the question if not Brother/Sister
+        if (auxQuestion) auxQuestion.style.display = 'none';
+      }
+      
+      // Populate priest chairman fields for edit
+      const isChairman = m.is_chairman === true || String(m.is_chairman).toLowerCase() === 'true';
+      const chairmanQuestion = document.getElementById('edit-priest-chairman-question');
+      if (['Priest', 'Priest Sister'].includes(m.role_group)) {
+        // Show the question
+        if (chairmanQuestion) chairmanQuestion.style.display = 'flex';
+        const chairmanRadios = document.getElementsByName('edit-is-chairman');
+        if (chairmanRadios && chairmanRadios.length >= 2) {
+          chairmanRadios[0].checked = isChairman;     // Yes
+          chairmanRadios[1].checked = !isChairman;    // No
+        }
+        const chairmanType = document.getElementById('edit-priest-chairman-type');
+        if (chairmanType) chairmanType.value = m.chairman_type || '';
+        const chairmanGroup = document.getElementById('edit-priest-chairman-type-group');
+        if (chairmanGroup) chairmanGroup.style.display = isChairman ? 'flex' : 'none';
+      } else {
+        // Hide the question if not Priest/Priest Sister
+        if (chairmanQuestion) chairmanQuestion.style.display = 'none';
+      }
+      
       document.getElementById('edit-modal').style.display = 'flex';
     }
 
@@ -6878,7 +7086,15 @@
           (currentMember.sister_name || currentMember.sister_id_number || currentMember.sister_contact_number || currentMember.sister_email || currentMember.sister_dob) &&
           !window.confirm('Changing to a 50/50 family removes the spouse details stored on this family record. Continue?')) return;
       try {
-        validateMemberAllocation('edit', roleGroup);
+        // For Priests being edited without Elder assignment, skip that validation
+        if (roleGroup.includes('Priest') && !document.getElementById('edit-assigned-elder').value) {
+          // Validate congregation only
+          if (!getTenantCongregationIds().has(String(document.getElementById('edit-congregation').value))) {
+            throw new Error('Select a congregation in your assigned overseership.');
+          }
+        } else {
+          validateMemberAllocation('edit', roleGroup);
+        }
         if (supabaseClient) {
           if (!currentMember) throw new Error('The member record is no longer loaded. Refresh and try again.');
           if (currentMember.family_main_id && (
@@ -6924,6 +7140,7 @@
             sealing_date: document.getElementById('edit-sealing-date').value || null,
             contact_number: document.getElementById('edit-contact').value.trim() || null,
             address: document.getElementById('edit-address').value.trim() || null,
+            previous_address: document.getElementById('edit-previous-address').value.trim() || null,
             congregation_id: document.getElementById('edit-congregation').value,
             family_type: familyType,
             is_family: isFamily,
@@ -6939,7 +7156,11 @@
             sister_is_active: isFamilyUnit ? currentMember.sister_is_active !== false : false,
             sister_is_deceased: isFamilyUnit ? Boolean(currentMember.sister_is_deceased) : false,
             burial_fund: document.getElementById('edit-burial-fund').value || currentMember.burial_fund || 'None',
-            has_will: document.querySelector('input[name="edit-has-will"]:checked')?.value === 'true'
+            has_will: document.querySelector('input[name="edit-has-will"]:checked')?.value === 'true',
+            is_auxiliary_power: ['Brother', 'Sister'].includes(roleGroup) ? document.querySelector('input[name="edit-is-auxiliary-power"]:checked')?.value === 'true' : false,
+            auxiliary_power_role: ['Brother', 'Sister'].includes(roleGroup) && document.querySelector('input[name="edit-is-auxiliary-power"]:checked')?.value === 'true' ? document.getElementById('edit-auxiliary-power-role').value || null : null,
+            is_chairman: ['Priest', 'Priest Sister'].includes(roleGroup) ? document.querySelector('input[name="edit-is-chairman"]:checked')?.value === 'true' : false,
+            chairman_type: ['Priest', 'Priest Sister'].includes(roleGroup) && document.querySelector('input[name="edit-is-chairman"]:checked')?.value === 'true' ? document.getElementById('edit-priest-chairman-type').value || null : null
           };
           const childPayloads = familyChildren.map(child => {
             const childId = child.childId || crypto.randomUUID();
