@@ -672,6 +672,98 @@
     .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
     .inline-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
+    #view-apostleship .apostle-dashboard {
+      padding: clamp(18px, 2.5vw, 30px);
+      border-color: #e2e8f1;
+      background: linear-gradient(145deg, #f3f8fc 0%, #f8f6fc 50%, #f4f8fc 100%);
+    }
+    #view-apostleship .apostle-heading { align-items: flex-start; gap: 18px; margin-bottom: 20px; }
+    #view-apostleship .apostle-eyebrow {
+      display: inline-block; margin: 0 0 8px; color: #16736e; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    #view-apostleship .apostle-heading h3 { margin: 0; color: #233750; font-size: clamp(1.2rem, 2vw, 1.65rem); }
+    #view-apostleship .apostle-heading .muted-note { margin-top: 6px; max-width: 720px; line-height: 1.5; }
+    #view-apostleship .apostle-actions .btn,
+    #view-apostleship .apostle-tab {
+      color: #3a566f; background: #fff; border: 1px solid #d6e2eb;
+    }
+    #view-apostleship .apostle-actions .btn:hover,
+    #view-apostleship .apostle-tab:hover { background: #e9f4f4; }
+    #view-apostleship .apostle-tab[aria-selected="true"] {
+      color: #fff; background: #287b80; border-color: #287b80;
+    }
+    #view-apostleship .apostle-actions .btn:focus-visible,
+    #view-apostleship .apostle-tab:focus-visible,
+    #view-apostleship .apostle-link:focus-visible {
+      outline: 3px solid #137c86; outline-offset: 3px;
+    }
+    #view-apostleship .apostle-period {
+      display: flex; flex-wrap: wrap; align-items: end; gap: 12px 24px;
+      padding: 16px 18px; border: 1px solid #deebe9; border-radius: 12px;
+      background: linear-gradient(115deg, #eff9f7, #f8fbff);
+    }
+    #view-apostleship .apostle-period h4 { margin: 0 0 5px; color: #315268; font-size: 0.85rem; }
+    #view-apostleship .apostle-period .muted-note { max-width: 630px; line-height: 1.5; }
+    #view-apostleship .apostle-period-fields { margin-left: auto; }
+    #view-apostleship .apostle-panel {
+      min-width: 0; margin-top: 18px; padding: 18px; background: #fff;
+      border: 1px solid #e3eaf1; border-radius: 14px;
+      box-shadow: 0 5px 16px rgba(48, 77, 104, 0.04);
+    }
+    #view-apostleship .apostle-panel-heading { margin: 0 0 14px; color: #263d53; font-size: 0.95rem; }
+    #view-apostleship .apostle-panel-heading::before {
+      content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 9px;
+      border-radius: 50%; background: #58b9ae; vertical-align: 1px;
+    }
+    #view-apostleship #apostle-kpis {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+      gap: 12px; margin: 0;
+    }
+    #view-apostleship #apostle-kpis .kpi-card {
+      min-width: 0; padding: 17px; overflow-wrap: anywhere;
+      border: 1px solid #dcebe8; box-shadow: none;
+      background: linear-gradient(135deg, #f0fbf8, #dff3ee);
+    }
+    #view-apostleship #apostle-kpis .kpi-card:nth-child(4n + 2) {
+      border-color: #dae5f4; background: linear-gradient(135deg, #f3f7fe, #e1ebf9);
+    }
+    #view-apostleship #apostle-kpis .kpi-card:nth-child(4n + 3) {
+      border-color: #eadff1; background: linear-gradient(135deg, #fbf5fc, #f1e4f5);
+    }
+    #view-apostleship #apostle-kpis .kpi-card:nth-child(4n) {
+      border-color: #f2e3db; background: linear-gradient(135deg, #fff8f4, #fae9e3);
+    }
+    #view-apostleship #apostle-kpis .kpi-title { color: #405a6b; font-size: 0.7rem; }
+    #view-apostleship #apostle-kpis .kpi-value { color: #20394c; font-size: clamp(1.3rem, 2vw, 1.7rem); }
+    #view-apostleship .apostle-insights {
+      display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr); gap: 16px;
+    }
+    #view-apostleship .apostle-insights .apostle-panel { margin-top: 16px; }
+    #view-apostleship .apostle-chart-description { margin-bottom: 14px; line-height: 1.5; }
+    #view-apostleship .apostle-comparison { margin-top: 20px; padding-top: 18px; border-top: 1px solid #e6ecf2; }
+    #view-apostleship #apostle-overseership-tithe-chart-area { position: relative; }
+    #view-apostleship .table-container { border-color: #e6ecf2; }
+    #view-apostleship th { background: #f4f8fb; color: #52677b; }
+    #view-apostleship tfoot th,
+    #view-apostleship tfoot td { background: #edf6f5; font-weight: 700; }
+    #view-apostleship .apostle-link { color: #176f77; }
+    #view-apostleship #apostle-drill { margin: 16px 0 0; }
+    #view-apostleship #apostle-tithe-chart-table,
+    #view-apostleship #apostle-souls-history-table { margin-top: 12px; }
+    #view-apostleship #apostle-tithe-chart-table summary,
+    #view-apostleship #apostle-souls-history-table summary { color: #176f77; cursor: pointer; font-weight: 600; }
+    #view-apostleship #apostle-souls-history-area { position: relative; }
+    @media (max-width: 900px) {
+      #view-apostleship .apostle-insights { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    }
+    @media (max-width: 600px) {
+      #view-apostleship .apostle-period-fields { margin-left: 0; }
+      #view-apostleship .apostle-period-fields .form-group { flex: 1 1 150px; }
+      #view-apostleship .apostle-actions { width: 100%; }
+      #view-apostleship .apostle-actions .btn { flex: 1 1 auto; }
+    }
+
     /* Toolbar Slicer Styling */
     .slicer-toolbar {
       background-color: #f5f8fb;
@@ -2043,54 +2135,85 @@
         </div>
       </div>
       <div id="view-apostleship" class="view-section">
-        <div class="dash-card">
-          <div class="section-heading">
+        <div class="dash-card apostle-dashboard">
+          <div class="section-heading apostle-heading">
             <div>
-              <h3 style="margin:0;color:var(--dash-primary);">Apostleship 100 Executive Dashboard</h3>
+              <span class="apostle-eyebrow">Apostleship 100 &middot; Reporting</span>
+              <h3>Apostleship 100 Executive Dashboard</h3>
               <p class="muted-note">Reporting for all Overseerships. Select an Overseership or one of its figures to drill down by congregation.</p>
             </div>
-            <div class="inline-actions">
+            <div class="inline-actions apostle-actions">
               <button type="button" class="btn btn-secondary" onclick="setApostlePeriod('month')">This month</button>
               <button type="button" class="btn btn-secondary" onclick="setApostlePeriod('year')">Year to date</button>
               <button type="button" class="btn btn-secondary" onclick="loadApostleDashboard()">Refresh</button>
             </div>
           </div>
-          <div class="slicer-toolbar">
-            <h4>Period for tithes and Prophetic families</h4>
-            <div class="inline-actions">
+          <div class="apostle-period">
+            <div>
+              <h4>Reporting period</h4>
+              <p class="muted-note">Summary souls and officers are current totals. The period applies to tithes, Prophetic families and the souls history chart. Prophetic families are counted once per period.</p>
+            </div>
+            <div class="inline-actions apostle-period-fields">
               <div class="form-group"><label for="apostle-start-date">Start date</label><input type="date" id="apostle-start-date" onchange="loadApostleDashboard()"></div>
               <div class="form-group"><label for="apostle-end-date">End date</label><input type="date" id="apostle-end-date" onchange="loadApostleDashboard()"></div>
             </div>
-            <p class="muted-note" style="margin:8px 0 0;">Souls and officers are the current totals. Prophetic families are families with a recorded visit in the period, each counted once.</p>
           </div>
           <p id="apostle-status" class="muted-note" role="status" aria-live="polite"></p>
           <div id="apostle-summary" hidden>
-            <div class="grid-stats" id="apostle-kpis"></div>
-            <div class="chart-container" style="margin-top:16px;">
-              <h4 style="margin:0 0 8px;">Tithes over time</h4>
-              <p class="muted-note">Calendar-month totals for all Overseerships within the selected dates. The first and last months may be partial; choose a longer period to see a trend.</p>
-              <p id="apostle-tithe-chart-status" class="muted-note" role="status" aria-live="polite"></p>
-              <div id="apostle-tithe-chart-area" hidden style="height:300px;"><canvas id="apostle-tithe-chart" role="img" aria-label="Monthly tithes for the selected period"></canvas></div>
-              <details id="apostle-tithe-chart-table" hidden>
-                <summary>View monthly amounts</summary>
+            <div class="apostle-panel">
+              <h4 class="apostle-panel-heading">At a glance</h4>
+              <div class="grid-stats" id="apostle-kpis"></div>
+            </div>
+            <div class="apostle-insights">
+              <div class="apostle-panel">
+                <h4 class="apostle-panel-heading">Tithes over time</h4>
+                <p class="muted-note apostle-chart-description">Calendar-month totals for all Overseerships within the selected dates. The first and last months may be partial; choose a longer period to see a trend.</p>
+                <p id="apostle-tithe-chart-status" class="muted-note" role="status" aria-live="polite"></p>
+                <div id="apostle-tithe-chart-area" hidden style="height:300px;"><canvas id="apostle-tithe-chart" role="img" aria-label="Monthly tithes for the selected period"></canvas></div>
+                <details id="apostle-tithe-chart-table" hidden>
+                  <summary>View monthly amounts</summary>
+                  <div class="table-container"><table>
+                    <thead><tr><th>Month</th><th style="text-align:right;">Tithes</th></tr></thead>
+                    <tbody id="apostle-tithe-chart-body"></tbody>
+                  </table></div>
+                </details>
+                <div class="apostle-comparison">
+                  <h4 class="apostle-panel-heading">Tithes by Overseership</h4>
+                  <p class="muted-note apostle-chart-description">Totals for the selected period. Exact amounts are also shown in the By Overseership table below.</p>
+                  <p id="apostle-overseership-tithe-status" class="muted-note" role="status" aria-live="polite"></p>
+                  <div id="apostle-overseership-tithe-chart-area" hidden><canvas id="apostle-overseership-tithe-chart" role="img" aria-label="Tithes by Overseership for the selected period"></canvas></div>
+                </div>
+              </div>
+              <div class="apostle-panel">
+                <h4 class="apostle-panel-heading">Officers by role</h4>
                 <div class="table-container"><table>
-                  <thead><tr><th>Month</th><th style="text-align:right;">Tithes</th></tr></thead>
-                  <tbody id="apostle-tithe-chart-body"></tbody>
+                  <thead><tr><th>Role</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Officer Sisters</th></tr></thead>
+                  <tbody id="apostle-officer-body"></tbody>
+                </table></div>
+              </div>
+            </div>
+            <div class="apostle-panel">
+              <h4 class="apostle-panel-heading">By Overseership</h4>
+              <div class="table-container"><table>
+                <thead><tr><th>Overseership</th><th style="text-align:right;">Souls</th><th style="text-align:right;">Children</th><th style="text-align:right;">Youth</th><th style="text-align:right;">Members</th><th style="text-align:right;">Senior Citizens</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Tithes</th><th style="text-align:right;">Prophetic families</th><th style="text-align:right;">Prophetic souls</th></tr></thead>
+                <tbody id="apostle-overseership-body"></tbody>
+                <tfoot id="apostle-overseership-foot"></tfoot>
+              </table></div>
+            </div>
+            <div class="apostle-panel">
+              <h4 class="apostle-panel-heading">Monthly souls by Overseership</h4>
+              <p class="muted-note apostle-chart-description">Each month shows the latest daily snapshot within the selected dates. Partial months use the latest available date; missing months are not estimated.</p>
+              <p id="apostle-souls-history-status" class="muted-note" role="status" aria-live="polite"></p>
+              <div id="apostle-souls-history-area" hidden><canvas id="apostle-souls-history-chart" role="img" aria-label="Monthly souls by Overseership for the selected period"></canvas></div>
+              <details id="apostle-souls-history-table" hidden>
+                <summary>View monthly totals and snapshot dates</summary>
+                <div class="table-container"><table>
+                  <thead><tr><th>Month</th><th>Overseership</th><th>Snapshot date</th><th style="text-align:right;">Souls</th></tr></thead>
+                  <tbody id="apostle-souls-history-body"></tbody>
                 </table></div>
               </details>
             </div>
-            <h4>Officers by role</h4>
-            <div class="table-container"><table>
-              <thead><tr><th>Role</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Officer Sisters</th></tr></thead>
-              <tbody id="apostle-officer-body"></tbody>
-            </table></div>
-            <h4>By Overseership</h4>
-            <div class="table-container"><table>
-              <thead><tr><th>Overseership</th><th style="text-align:right;">Souls</th><th style="text-align:right;">Children</th><th style="text-align:right;">Youth</th><th style="text-align:right;">Members</th><th style="text-align:right;">Senior Citizens</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Tithes</th><th style="text-align:right;">Prophetic families</th><th style="text-align:right;">Prophetic souls</th></tr></thead>
-              <tbody id="apostle-overseership-body"></tbody>
-              <tfoot id="apostle-overseership-foot"></tfoot>
-            </table></div>
-            <div id="apostle-drill" class="dash-card" hidden style="margin-top:16px;">
+            <div id="apostle-drill" class="dash-card" hidden>
               <div class="section-heading">
                 <h4 id="apostle-drill-title" style="margin:0;"></h4>
                 <button type="button" class="btn btn-secondary" onclick="closeApostleDrill()">Close</button>
@@ -4371,6 +4494,8 @@
     let apostleDrill = null;
     let apostleLoadRequestId = 0;
     let apostleTitheChart = null;
+    let apostleOverseershipTitheChart = null;
+    let apostleSoulsHistoryChart = null;
 
     function canViewApostleDashboard() {
       return isApostle || isSystemAdmin;
@@ -4466,7 +4591,169 @@
           totals.officerCount, zarFormatterFull.format(totals.tithes), totals.propheticFamilies, totals.propheticSouls
         ].map(cell).join('')}</tr>`
         : '';
+      renderApostleOverseershipTithes(groups);
       renderApostleDrill(groups);
+    }
+
+    function clearApostleOverseershipTithes() {
+      if (apostleOverseershipTitheChart) {
+        apostleOverseershipTitheChart.destroy();
+        apostleOverseershipTitheChart = null;
+      }
+      document.getElementById('apostle-overseership-tithe-chart-area').hidden = true;
+    }
+
+    function apostleOverseershipColours(groups) {
+      return new Map(groups.map(group => String(group.id)).sort().map((id, index) =>
+        [id, `hsl(${(index * 137.508) % 360}, 62%, 43%)`]
+      ));
+    }
+
+    function renderApostleOverseershipTithes(groups) {
+      const status = document.getElementById('apostle-overseership-tithe-status');
+      const area = document.getElementById('apostle-overseership-tithe-chart-area');
+      clearApostleOverseershipTithes();
+      status.textContent = '';
+      if (!groups.length) {
+        status.textContent = 'No Overseerships found for this report.';
+        return;
+      }
+      try {
+        if (typeof Chart === 'undefined') throw new Error('The chart library did not load. Amounts are available in the By Overseership table.');
+        const colourById = apostleOverseershipColours(groups);
+        const colours = groups.map(group => colourById.get(String(group.id)));
+        area.style.height = `${Math.max(240, groups.length * 38 + 60)}px`;
+        area.hidden = false;
+        apostleOverseershipTitheChart = new Chart(document.getElementById('apostle-overseership-tithe-chart'), {
+          type: 'bar',
+          data: {
+            labels: groups.map(group => group.name),
+            datasets: [{
+              label: 'Tithes', data: groups.map(group => sumApostleRows(group.rows).tithes),
+              backgroundColor: colours, borderColor: colours, borderWidth: 1, borderRadius: 4
+            }]
+          },
+          options: {
+            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            scales: { x: { beginAtZero: true, ticks: { callback: value => zarFormatterFull.format(value) } } },
+            plugins: { legend: { display: false }, tooltip: { callbacks: { label: item => `Tithes: ${zarFormatterFull.format(item.parsed.x)}` } } }
+          }
+        });
+      } catch (error) {
+        console.error('Could not render tithes by Overseership:', error);
+        area.hidden = true;
+        status.textContent = `Tithes by Overseership unavailable: ${error.message || 'Unexpected error.'}`;
+      }
+    }
+
+    function clearApostleSoulsHistory() {
+      if (apostleSoulsHistoryChart) {
+        apostleSoulsHistoryChart.destroy();
+        apostleSoulsHistoryChart = null;
+      }
+      document.getElementById('apostle-souls-history-area').hidden = true;
+      document.getElementById('apostle-souls-history-table').hidden = true;
+      document.getElementById('apostle-souls-history-body').innerHTML = '';
+    }
+
+    async function loadApostleSoulsHistory(start, end, requestId, groups) {
+      const status = document.getElementById('apostle-souls-history-status');
+      const area = document.getElementById('apostle-souls-history-area');
+      try {
+        const { data, error } = await supabaseClient.rpc('apostle_monthly_souls_history', { p_start: start, p_end: end });
+        if (requestId !== apostleLoadRequestId) return;
+        if (error) throw error;
+        if (!Array.isArray(data) || data.some(row => {
+          if (!row || typeof row.snapshot_date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(row.snapshot_date)) return true;
+          const date = new Date(`${row.snapshot_date}T00:00:00Z`);
+          return !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== row.snapshot_date ||
+            row.snapshot_date < start || row.snapshot_date > end ||
+            typeof row.overseership_id !== 'string' || !row.overseership_id ||
+            typeof row.overseership_name !== 'string' || !row.overseership_name ||
+            !Number.isSafeInteger(row.souls) || row.souls < 0;
+        })) throw new Error('The database returned invalid daily soul totals.');
+        if (!data.length) {
+          status.textContent = 'No daily soul snapshots are available for this period. History starts when recording is set up; check the daily snapshot job if totals were expected.';
+          return;
+        }
+        const dates = Array.from(new Set(data.map(row => row.snapshot_date))).sort();
+        const observedMonths = new Set(dates.map(date => date.slice(0, 7)));
+        const labels = [];
+        for (let month = new Date(`${dates[0].slice(0, 7)}-01T00:00:00Z`); month.toISOString().slice(0, 7) <= dates[dates.length - 1].slice(0, 7); month.setUTCMonth(month.getUTCMonth() + 1)) {
+          labels.push(month.toISOString().slice(0, 7));
+        }
+        const names = new Map(groups.map(group => [String(group.id), group.name]));
+        data.forEach(row => { if (!names.has(row.overseership_id)) names.set(row.overseership_id, row.overseership_name); });
+        const currentIds = new Set(groups.map(group => String(group.id)));
+        const colourById = apostleOverseershipColours(groups);
+        const extraIds = Array.from(names.keys()).filter(id => !currentIds.has(id)).sort();
+        extraIds.forEach((id, index) => {
+          colourById.set(id, `hsl(${((groups.length + index) * 137.508) % 360}, 62%, 43%)`);
+        });
+        const seen = new Set();
+        const monthly = new Map();
+        data.forEach(row => {
+          const dailyKey = `${row.snapshot_date}|${row.overseership_id}`;
+          if (seen.has(dailyKey)) throw new Error('The database returned duplicate daily soul totals.');
+          seen.add(dailyKey);
+          const monthlyKey = `${row.snapshot_date.slice(0, 7)}|${row.overseership_id}`;
+          const previous = monthly.get(monthlyKey);
+          if (!previous || row.snapshot_date > previous.snapshot_date) monthly.set(monthlyKey, row);
+        });
+        const monthlyRows = Array.from(monthly.values()).sort((a, b) =>
+          a.snapshot_date.slice(0, 7).localeCompare(b.snapshot_date.slice(0, 7)) ||
+          a.overseership_name.localeCompare(b.overseership_name)
+        );
+        document.getElementById('apostle-souls-history-body').innerHTML = monthlyRows.map(row =>
+          `<tr><td>${escapeHospitalHtml(row.snapshot_date.slice(0, 7))}</td><td>${escapeHospitalHtml(row.overseership_name)}</td><td>${escapeHospitalHtml(row.snapshot_date)}</td><td style="text-align:right;">${escapeHospitalHtml(String(row.souls))}</td></tr>`
+        ).join('');
+        document.getElementById('apostle-souls-history-table').hidden = false;
+        if (typeof Chart === 'undefined') throw new Error('The chart library did not load. Recorded totals are available in the table.');
+        area.style.height = `${Math.max(400, 300 + Math.ceil(names.size / 3) * 24)}px`;
+        area.hidden = false;
+        apostleSoulsHistoryChart = new Chart(document.getElementById('apostle-souls-history-chart'), {
+          type: 'line',
+          data: {
+            labels,
+            datasets: Array.from(names, ([id, name]) => {
+              const snapshots = labels.map(month => monthly.get(`${month}|${id}`));
+              return {
+                label: name, data: snapshots.map(row => row ? row.souls : null),
+                snapshotDates: snapshots.map(row => row ? row.snapshot_date : null),
+                borderColor: colourById.get(id), backgroundColor: colourById.get(id),
+                borderWidth: 2, pointRadius: 3, tension: 0, spanGaps: false
+              };
+            })
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: {
+              legend: { position: 'bottom' },
+              tooltip: { callbacks: { label: item =>
+                `${item.dataset.label}: ${item.parsed.y} (snapshot ${item.dataset.snapshotDates[item.dataIndex]})`
+              } }
+            }
+          }
+        });
+        let message = observedMonths.size === 1
+          ? `One reporting month is available (latest snapshot: ${dates[dates.length - 1]}); a trend will appear as monthly history builds.`
+          : `Latest snapshot: ${dates[dates.length - 1]}.${labels.length > observedMonths.size ? ' Some months have no snapshot; gaps are not estimated.' : ''}`;
+        const parts = Object.fromEntries(new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Africa/Johannesburg', year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+        }).formatToParts(new Date()).map(part => [part.type, part.value]));
+        const today = `${parts.year}-${parts.month}-${parts.day}`;
+        if (start <= today && end >= today && `${parts.hour}:${parts.minute}` >= '00:15' && dates[dates.length - 1] < today) {
+          message += ' Today’s snapshot is missing; check the daily snapshot job.';
+        }
+        status.textContent = message;
+      } catch (error) {
+        if (requestId !== apostleLoadRequestId) return;
+        console.error('Could not load daily soul totals:', error);
+        area.hidden = true;
+        status.textContent = `Souls history unavailable: ${error.message || 'Unexpected error.'}`;
+      }
     }
 
     function openApostleDrill(overseershipId, section) {
@@ -4559,8 +4846,9 @@
         apostleTitheChart = new Chart(document.getElementById('apostle-tithe-chart'), {
           type: 'line',
           data: { labels, datasets: [{
-            label: 'Tithes', data: amounts, borderColor: '#537b9e', backgroundColor: '#537b9e',
-            borderWidth: 3, tension: 0.2, pointRadius: 4
+            label: 'Tithes', data: amounts, borderColor: '#288e8a', backgroundColor: 'rgba(80, 183, 170, 0.16)',
+            pointBackgroundColor: '#fff', pointBorderColor: '#288e8a', pointBorderWidth: 2,
+            fill: true, borderWidth: 3, tension: 0.2, pointRadius: 4
           }] },
           options: {
             responsive: true, maintainAspectRatio: false,
@@ -4585,7 +4873,10 @@
       const status = document.getElementById('apostle-status');
       const summary = document.getElementById('apostle-summary');
       clearApostleTitheChart();
+      clearApostleOverseershipTithes();
+      clearApostleSoulsHistory();
       document.getElementById('apostle-tithe-chart-status').textContent = 'Loading monthly tithes...';
+      document.getElementById('apostle-souls-history-status').textContent = 'Loading daily soul totals...';
       if (!start || !end || start > end) {
         summary.hidden = true;
         status.textContent = 'Choose a valid date range (start date must not be after end date).';
@@ -4601,7 +4892,10 @@
         summary.hidden = false;
         status.textContent = `Tithes and Prophetic families for ${start} to ${end}.`;
         renderApostleDashboard();
-        await loadApostleTitheChart(start, end, requestId);
+        await Promise.all([
+          loadApostleTitheChart(start, end, requestId),
+          loadApostleSoulsHistory(start, end, requestId, groupApostleRowsByOverseership(apostleReport))
+        ]);
       } catch (error) {
         if (requestId !== apostleLoadRequestId) return;
         console.error('Could not load the Apostleship dashboard:', error);
