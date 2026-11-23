@@ -2191,33 +2191,24 @@
               <h4 class="apostle-panel-heading">At a glance</h4>
               <div class="grid-stats" id="apostle-kpis"></div>
             </div>
-            <div class="apostle-insights">
-              <div class="apostle-panel">
-                <h4 class="apostle-panel-heading">Tithes over time</h4>
-                <p class="muted-note apostle-chart-description">Calendar-month totals for all Overseerships within the selected dates. The first and last months may be partial; choose a longer period to see a trend.</p>
-                <p id="apostle-tithe-chart-status" class="muted-note" role="status" aria-live="polite"></p>
-                <div id="apostle-tithe-chart-area" hidden style="height:300px;"><canvas id="apostle-tithe-chart" role="img" aria-label="Monthly tithes for the selected period"></canvas></div>
-                <details id="apostle-tithe-chart-table" hidden>
-                  <summary>View monthly amounts</summary>
-                  <div class="table-container"><table>
-                    <thead><tr><th>Month</th><th style="text-align:right;">Tithes</th></tr></thead>
-                    <tbody id="apostle-tithe-chart-body"></tbody>
-                  </table></div>
-                </details>
-                <div class="apostle-comparison">
-                  <h4 class="apostle-panel-heading">Tithes by Overseership</h4>
-                  <p class="muted-note apostle-chart-description">Totals for the selected period. Exact amounts are also shown in the By Overseership table below.</p>
-                  <p id="apostle-overseership-tithe-status" class="muted-note" role="status" aria-live="polite"></p>
-                  <div id="apostle-overseership-tithe-chart-area" hidden><canvas id="apostle-overseership-tithe-chart" role="img" aria-label="Tithes by Overseership for the selected period"></canvas></div>
-                </div>
-              </div>
-              <div class="apostle-panel">
-                <h4 class="apostle-panel-heading">Officers by role</h4>
+            <div class="apostle-panel">
+              <h4 class="apostle-panel-heading">Tithes over time</h4>
+              <p class="muted-note apostle-chart-description">Calendar-month totals for all Overseerships within the selected dates. The first and last months may be partial; choose a longer period to see a trend.</p>
+              <p id="apostle-tithe-chart-status" class="muted-note" role="status" aria-live="polite"></p>
+              <div id="apostle-tithe-chart-area" hidden style="height:450px;"><canvas id="apostle-tithe-chart" role="img" aria-label="Monthly tithes for the selected period"></canvas></div>
+              <details id="apostle-tithe-chart-table" hidden>
+                <summary>View monthly amounts</summary>
                 <div class="table-container"><table>
-                  <thead><tr><th>Role</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Officer Sisters</th></tr></thead>
-                  <tbody id="apostle-officer-body"></tbody>
+                  <thead><tr><th>Month</th><th style="text-align:right;">Tithes</th></tr></thead>
+                  <tbody id="apostle-tithe-chart-body"></tbody>
                 </table></div>
-              </div>
+              </details>
+            </div>
+            <div class="apostle-panel">
+              <h4 class="apostle-panel-heading">Tithes by Overseership</h4>
+              <p class="muted-note apostle-chart-description">Trend for the selected period, excluding Apostleship 100. Exact amounts are also shown in the By Overseership table below.</p>
+              <p id="apostle-overseership-tithe-status" class="muted-note" role="status" aria-live="polite"></p>
+              <div id="apostle-overseership-tithe-chart-area" hidden style="height:450px;"><canvas id="apostle-overseership-tithe-chart" role="img" aria-label="Tithes by Overseership for the selected period"></canvas></div>
             </div>
             <div class="apostle-panel">
               <h4 class="apostle-panel-heading">By Overseership</h4>
@@ -2227,11 +2218,20 @@
                 <tfoot id="apostle-overseership-foot"></tfoot>
               </table></div>
             </div>
+            <div id="apostle-drill" class="dash-card" hidden>
+              <div class="section-heading">
+                <h4 id="apostle-drill-title" style="margin:0;"></h4>
+                <button type="button" class="btn btn-secondary" onclick="closeApostleDrill()">Close</button>
+              </div>
+              <div class="inline-actions" id="apostle-drill-tabs" role="tablist" aria-label="Section"></div>
+              <div class="apostle-drill-content" id="apostle-drill-content" style="margin-top:14px;"></div>
+              <div class="table-container" style="margin-top:10px;"><table id="apostle-drill-table"></table></div>
+            </div>
             <div class="apostle-panel">
               <h4 class="apostle-panel-heading">Monthly souls by Overseership</h4>
               <p class="muted-note apostle-chart-description">Each month shows the latest daily snapshot within the selected dates. Partial months use the latest available date; missing months are not estimated.</p>
               <p id="apostle-souls-history-status" class="muted-note" role="status" aria-live="polite"></p>
-              <div id="apostle-souls-history-area" hidden><canvas id="apostle-souls-history-chart" role="img" aria-label="Monthly souls by Overseership for the selected period"></canvas></div>
+              <div id="apostle-souls-history-area" hidden style="height:450px;"><canvas id="apostle-souls-history-chart" role="img" aria-label="Monthly souls by Overseership for the selected period"></canvas></div>
               <details id="apostle-souls-history-table" hidden>
                 <summary>View monthly totals and snapshot dates</summary>
                 <div class="table-container"><table>
@@ -2240,13 +2240,12 @@
                 </table></div>
               </details>
             </div>
-            <div id="apostle-drill" class="dash-card" hidden>
-              <div class="section-heading">
-                <h4 id="apostle-drill-title" style="margin:0;"></h4>
-                <button type="button" class="btn btn-secondary" onclick="closeApostleDrill()">Close</button>
-              </div>
-              <div class="inline-actions" id="apostle-drill-tabs" role="tablist" aria-label="Section"></div>
-              <div class="table-container" style="margin-top:10px;"><table id="apostle-drill-table"></table></div>
+            <div class="apostle-panel">
+              <h4 class="apostle-panel-heading">Officers by role</h4>
+              <div class="table-container"><table>
+                <thead><tr><th>Role</th><th style="text-align:right;">Officers</th><th style="text-align:right;">Officer Sisters</th></tr></thead>
+                <tbody id="apostle-officer-body"></tbody>
+              </table></div>
             </div>
           </div>
         </div>
@@ -4643,29 +4642,40 @@
       const area = document.getElementById('apostle-overseership-tithe-chart-area');
       clearApostleOverseershipTithes();
       status.textContent = '';
-      if (!groups.length) {
+      const filtered = groups.filter(g => g.id !== '100');
+      if (!filtered.length) {
         status.textContent = 'No Overseerships found for this report.';
         return;
       }
       try {
         if (typeof Chart === 'undefined') throw new Error('The chart library did not load. Amounts are available in the By Overseership table.');
-        const colourById = apostleOverseershipColours(groups);
-        const colours = groups.map(group => colourById.get(String(group.id)));
-        area.style.height = `${Math.max(240, groups.length * 38 + 60)}px`;
+        const colourById = apostleOverseershipColours(filtered);
+        const labels = filtered.map(g => g.name);
+        const datasets = filtered.map(group => {
+          const totals = sumApostleRows(group.rows);
+          return {
+            label: group.name,
+            data: [totals.tithes],
+            borderColor: colourById.get(String(group.id)),
+            backgroundColor: colourById.get(String(group.id)),
+            borderWidth: 2,
+            pointRadius: 4,
+            tension: 0.3
+          };
+        });
+        area.style.height = '300px';
         area.hidden = false;
         apostleOverseershipTitheChart = new Chart(document.getElementById('apostle-overseership-tithe-chart'), {
-          type: 'bar',
-          data: {
-            labels: groups.map(group => group.name),
-            datasets: [{
-              label: 'Tithes', data: groups.map(group => sumApostleRows(group.rows).tithes),
-              backgroundColor: colours, borderColor: colours, borderWidth: 1, borderRadius: 4
-            }]
-          },
+          type: 'line',
+          data: { labels, datasets },
           options: {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            scales: { x: { beginAtZero: true, ticks: { callback: value => zarFormatterFull.format(value) } } },
-            plugins: { legend: { display: false }, tooltip: { callbacks: { label: item => `Tithes: ${zarFormatterFull.format(item.parsed.x)}` } } }
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { callback: value => zarFormatterFull.format(value) } } },
+            plugins: {
+              legend: { display: true, position: 'bottom' },
+              tooltip: { callbacks: { label: item => `${item.dataset.label}: ${zarFormatterFull.format(item.parsed.y)}` } }
+            }
           }
         });
       } catch (error) {
@@ -4798,6 +4808,7 @@
 
     function renderApostleDrill(groups) {
       const panel = document.getElementById('apostle-drill');
+      const contentArea = document.getElementById('apostle-drill-content');
       const group = apostleDrill && groups.find(item => item.id === apostleDrill.overseershipId);
       panel.hidden = !group;
       if (!group) return;
@@ -4806,6 +4817,14 @@
       document.getElementById('apostle-drill-tabs').innerHTML = APOSTLE_SECTIONS.map(item =>
         `<button type="button" class="btn btn-secondary apostle-tab" role="tab" aria-selected="${item.id === section}" onclick="openApostleDrill('${escapeHospitalHtml(group.id)}','${item.id}')">${escapeHospitalHtml(item.label)}</button>`
       ).join('');
+      contentArea.innerHTML = '';
+      
+      if (section === 'tithes') {
+        const start = document.getElementById('apostle-start-date').value;
+        const end = document.getElementById('apostle-end-date').value;
+        renderApostleDrillTithesChart(group, start, end);
+      }
+      
       const th = (text, right = true) => `<th${right ? ' style="text-align:right;"' : ''}>${escapeHospitalHtml(text)}</th>`;
       const num = value => `<td style="text-align:right;">${escapeHospitalHtml(String(value))}</td>`;
       const name = row => escapeHospitalHtml(row.is_main ? 'Overseership Main' : row.congregation_name || row.congregation_id);
@@ -4838,6 +4857,58 @@
       }
       document.getElementById('apostle-drill-table').innerHTML =
         `<thead><tr>${head}</tr></thead><tbody>${body || '<tr><td class="muted-note">No congregations.</td></tr>'}</tbody><tfoot>${foot}</tfoot>`;
+    }
+
+    let apostleDrillTithesChart = null;
+
+    function renderApostleDrillTithesChart(group, start, end) {
+      const content = document.getElementById('apostle-drill-content');
+      if (apostleDrillTithesChart) {
+        apostleDrillTithesChart.destroy();
+        apostleDrillTithesChart = null;
+      }
+      content.innerHTML = '';
+      
+      try {
+        if (typeof Chart === 'undefined') throw new Error('The chart library did not load.');
+        const tithesData = group.rows.map(row => Number(row.tithes) || 0);
+        const congregationNames = group.rows.map(row => row.is_main ? 'Overseership Main' : row.congregation_name || row.congregation_id);
+        const startDate = new Date(start + 'T00:00:00Z');
+        const endDate = new Date(end + 'T00:00:00Z');
+        const dateRange = new Intl.DateTimeFormat('en-ZA', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(startDate) + ' to ' +
+          new Intl.DateTimeFormat('en-ZA', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(endDate);
+        
+        const colourById = apostleOverseershipColours([group]);
+        const colour = colourById.get(String(group.id));
+        const canvas = document.createElement('canvas');
+        canvas.id = 'apostle-drill-tithes-chart';
+        canvas.style.height = '250px';
+        content.appendChild(canvas);
+        
+        apostleDrillTithesChart = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels: congregationNames,
+            datasets: [{
+              label: `Tithes (${dateRange})`,
+              data: tithesData,
+              borderColor: colour,
+              backgroundColor: colour + '33',
+              borderWidth: 2,
+              pointRadius: 4,
+              tension: 0.3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { callback: value => zarFormatterFull.format(value) } } },
+            plugins: { tooltip: { callbacks: { label: item => `${zarFormatterFull.format(item.parsed.y)}` } } }
+          }
+        });
+      } catch (error) {
+        console.error('Could not render drill-down tithes chart:', error);
+      }
     }
 
     function clearApostleTitheChart() {
@@ -5083,9 +5154,19 @@
           'apostle-souls-history-area', 'apostle-souls-history-chart', 'apostle-souls-history-status', apostleSoulsHistoryChart, period);
         if (!document.getElementById('apostle-souls-history-table').hidden)
           addApostleExportTable(pptx, 'Monthly souls and snapshot dates', document.getElementById('apostle-souls-history-table').querySelector('table'), period);
-        if (!document.getElementById('apostle-drill').hidden)
+        if (!document.getElementById('apostle-drill').hidden) {
+          if (apostleDrill.section === 'tithes' && apostleDrillTithesChart) {
+            const canvas = document.getElementById('apostle-drill-tithes-chart');
+            if (canvas) {
+              apostleDrillTithesChart.update('none');
+              const scale = Math.min(12.1 / canvas.width, 5.2 / canvas.height);
+              const slide = addApostleExportSlide(pptx, document.getElementById('apostle-drill-title').textContent, period);
+              slide.addImage({ data: canvas.toDataURL('image/png'), x: 0.6, y: 0.9, w: canvas.width * scale, h: canvas.height * scale });
+            }
+          }
           addApostleExportTable(pptx, document.getElementById('apostle-drill-title').textContent,
             document.getElementById('apostle-drill-table'), period);
+        }
         await pptx.writeFile({ fileName: `apostleship_dashboard_${period.start}_to_${period.end}.pptx` });
         status.textContent = 'PowerPoint download prepared.';
       } catch (error) {
