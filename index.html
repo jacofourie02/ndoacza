@@ -579,6 +579,8 @@
     }
 
     .form-group { display: flex; flex-direction: column; gap: 4px; }
+    #shepherd-priest-group[hidden], #shepherd-visit-form[hidden], #shepherd-elder-select-group[hidden],
+    #shepherd-elder-date-group[hidden], #report-last-month[hidden] { display: none; }
     .form-group label { font-size: 0.75rem; font-weight: 600; color: var(--dash-text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
     .initial-congregation-group { grid-column: 1 / -1; align-items: flex-start; }
     .initial-congregation-group select { width: min(100%, 480px); }
@@ -633,7 +635,7 @@
       display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--dash-border); font-size: 0.875rem;
     }
     .checklist-item input[type="checkbox"] { width: auto; }
-    #attendance-member-list {
+    #attendance-member-list, #shepherd-member-list, #shepherd-allocation-body, #shepherd-elder-priests {
       display: block;
       overflow-x: auto;
     }
@@ -1070,6 +1072,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.5 5h5l-4 3.5 1.5 6L12 14l-5 3.5 1.5-6-4-3.5h5z"/><path d="M12 14v7"/></svg>
             Prophetic
           </button>
+          <button type="button" data-dashboard-view="view-shepherd" onclick="switchView('view-shepherd')" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-8-4.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 6.5-8 11-8 11z"/></svg>
+            Shepherd
+          </button>
           <button type="button" data-dashboard-view="view-tithes" onclick="switchView('view-tithes')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4M7 3h10"/></svg>
             Tithes
@@ -1198,6 +1204,10 @@
           <div class="module-card" data-dashboard-view="view-prophetic" onclick="switchView('view-prophetic')">
             <h3>Prophetic</h3>
             <p>Visit assigned members and families with no activity attendance for three months, and record dreams and visions.</p>
+          </div>
+          <div class="module-card" data-dashboard-view="view-shepherd" onclick="switchView('view-shepherd')" hidden>
+            <h3>Shepherd</h3>
+            <p>Record visits to your allocated families and members and review your recent visit history.</p>
           </div>
           <div class="module-card" data-dashboard-view="view-tithes" onclick="switchView('view-tithes')">
             <h3>Tithes</h3>
@@ -1597,7 +1607,7 @@
             </div>
           </div>
           <div class="section-heading" style="margin-top:20px;">
-            <div><h4 style="margin:0;">Removed Member Records</h4><p class="muted-note" style="margin:4px 0 0;">Removed members are kept here until permanently deleted from the database.</p></div>
+            <div><h4 style="margin:0;">Removed Member Records</h4><p class="muted-note" style="margin:4px 0 0;">Removed members are kept here until permanently deleted by an Overseer, Evangelist, or Prophet.</p></div>
             <button type="button" id="toggle-removed-members" class="btn btn-secondary" onclick="toggleRemovedMembers()">Show Removed Members</button>
           </div>
           <div id="removed-members-panel" style="display:none; margin-top:12px;">
@@ -1810,6 +1820,92 @@
       </div>
 
       <!-- 4. PROPHETIC VIEW -->
+      <div id="view-shepherd" class="view-section">
+        <div id="shepherd-elder-section" class="dash-card" hidden>
+          <div class="section-heading">
+            <div>
+              <h3 style="margin:0; color:var(--dash-primary);">Elder Visits to Priests</h3>
+              <p class="muted-note">Choose a congregation and one allocated Priest to record a visit.</p>
+            </div>
+            <button type="button" class="btn btn-secondary" onclick="loadElderShepherdModule()">Refresh</button>
+          </div>
+          <div class="form-grid">
+            <div id="shepherd-elder-select-group" class="form-group" hidden>
+              <label for="shepherd-elder-select">Elder</label>
+              <select id="shepherd-elder-select" onchange="loadElderShepherdSelection()" disabled><option value="">-- Select Elder --</option></select>
+              <small id="shepherd-elder-admin-note" class="muted-note">Visits saved here are real records for the selected Elder.</small>
+            </div>
+            <div class="form-group">
+              <label for="shepherd-elder-congregation">Congregation</label>
+              <select id="shepherd-elder-congregation" onchange="renderElderShepherdPriests()" disabled><option value="">-- Select Congregation --</option></select>
+            </div>
+          </div>
+          <form id="shepherd-elder-form" onsubmit="saveElderShepherdVisit(event)">
+            <div id="shepherd-elder-date-group" class="form-group">
+              <label for="shepherd-elder-date">Date visited</label>
+              <input type="date" id="shepherd-elder-date" required title="Example: 15 January 2026">
+            </div>
+            <h4 style="margin:10px 0 6px; font-size:0.9rem;">Allocated Priests</h4>
+            <input type="hidden" id="shepherd-elder-target">
+            <div id="shepherd-elder-priests"><p class="muted-note">Select a congregation to view Priests.</p></div>
+            <button id="shepherd-elder-save" type="submit" class="btn btn-success" style="margin-top:10px;" disabled>Save Visit</button>
+          </form>
+          <p id="shepherd-elder-readonly" class="muted-note" hidden>Overseers can view Elder visits but cannot record them.</p>
+          <p id="shepherd-elder-status" class="muted-note" role="status" aria-live="polite"></p>
+          <h4>Visits to Priests: Last Three Months</h4>
+          <div class="table-container"><table>
+            <thead><tr><th>Date visited</th><th>Priest</th><th>Congregation</th></tr></thead>
+            <tbody id="shepherd-elder-history"><tr><td colspan="3">Loading visit history...</td></tr></tbody>
+          </table></div>
+        </div>
+        <div class="dash-card">
+          <div class="section-heading">
+            <div>
+              <h3 style="margin:0; color:var(--dash-primary);">Priest Family / Member Visits</h3>
+              <p class="muted-note">Review allocated families and members. Priests can record a visit to one family or person; family visits are recorded against the family head.</p>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="shepherd-congregation">Congregation</label>
+              <select id="shepherd-congregation" onchange="onShepherdCongregationChange()" disabled><option value="">-- Select Congregation --</option></select>
+            </div>
+            <div class="form-group" id="shepherd-priest-group" hidden>
+              <label for="shepherd-priest">Priest</label>
+              <select id="shepherd-priest" onchange="setupShepherdModule()" disabled><option value="">-- Select Congregation First --</option></select>
+              <small id="shepherd-admin-note" class="muted-note">Visits saved here are real records for the selected Priest, not temporary test data.</small>
+            </div>
+          </div>
+          <div id="shepherd-allocations" hidden>
+            <h4 style="margin:10px 0 6px; font-size:0.9rem;">Allocated Families / Members</h4>
+            <div id="shepherd-allocation-body"></div>
+          </div>
+          <form id="shepherd-visit-form" onsubmit="saveShepherdVisit(event)" class="form-grid">
+            <div class="form-group">
+              <label for="shepherd-visit-date">Date visited</label>
+              <input type="date" id="shepherd-visit-date" required title="Example: 15 January 2026">
+            </div>
+            <div style="grid-column:1/-1;">
+              <h4 style="margin:10px 0 6px; font-size:0.9rem;">Member List</h4>
+              <p class="muted-note">Select one family or individual visited.</p>
+              <input type="hidden" id="shepherd-target">
+              <div id="shepherd-member-list"><p class="muted-note">Loading allocations...</p></div>
+            </div>
+            <button id="shepherd-save" type="submit" class="btn btn-success" style="grid-column:1/-1; margin-top:10px;" disabled>Save Visit</button>
+          </form>
+          <p id="shepherd-status" class="muted-note" role="status" aria-live="polite"></p>
+        </div>
+        <div class="dash-card">
+          <div class="section-heading">
+            <div><h3 style="margin:0;">Shepherd Visit History</h3><p class="muted-note">Visits for the selected Priest in the last three calendar months, newest first.</p></div>
+            <button type="button" class="btn btn-secondary" onclick="openShepherdModule()">Refresh History</button>
+          </div>
+          <div class="table-container"><table>
+            <thead><tr><th>Date visited</th><th>Family / member</th><th>Congregation</th></tr></thead>
+            <tbody id="shepherd-history"><tr><td colspan="3">Loading visit history...</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
       <div id="view-prophetic" class="view-section">
         <div class="dash-card">
           <div class="section-heading">
@@ -2067,6 +2163,7 @@
               <div class="form-group"><label>Start Date</label><input type="date" id="report-start-date" title="Example: 1 January 2026" onchange="loadReportData()"><small class="muted-note">Example: 1 January 2026</small></div>
               <div class="form-group"><label>End Date</label><input type="date" id="report-end-date" title="Example: 31 January 2026" onchange="loadReportData()"><small class="muted-note">Example: 31 January 2026</small></div>
               <div class="form-group"><label>Report Month Slicer</label><input type="month" id="report-month" title="Example: January 2026" onchange="setReportMonth()"><small class="muted-note">Example: January 2026</small></div>
+              <div class="form-group"><button id="report-last-month" type="button" class="btn btn-secondary" onclick="setReportLastCalendarMonth()" hidden>Last calendar month</button></div>
             </div>
             <p id="report-period-label" class="muted-note" style="margin:8px 0 0;">Monthly reports run from the first Sunday through the Saturday before the next month's first Sunday.</p>
           </div>
@@ -2077,6 +2174,23 @@
             <div class="grid-stats">
               <div class="kpi-card"><h3 class="kpi-title">Sunday School Attendances (period)</h3><p class="kpi-value" id="sunday-school-only-report-total">Unavailable</p></div>
             </div>
+          </div>
+          <div id="priest-shepherd-report" class="dash-card report-layout-item" data-report-layout-item style="display:none;">
+            <h4 style="margin-top:0;">Shepherd Visits (period)</h4>
+            <p class="muted-note">Each family or individual visited is counted once in the selected date range. A family visit and an individual visit are counted separately.</p>
+            <div class="grid-stats">
+              <div class="kpi-card"><h3 class="kpi-title">Families Visited</h3><p class="kpi-value" id="priest-shepherd-families">Unavailable</p></div>
+              <div class="kpi-card"><h3 class="kpi-title">Individuals Visited</h3><p class="kpi-value" id="priest-shepherd-individuals">Unavailable</p></div>
+              <div class="kpi-card"><h3 class="kpi-title">Total Families / Individuals Visited</h3><p class="kpi-value" id="priest-shepherd-total">Unavailable</p></div>
+            </div>
+          </div>
+          <div id="supervisor-shepherd-report" class="dash-card report-layout-item" data-report-layout-item style="display:none;">
+            <h4 id="supervisor-shepherd-title" style="margin-top:0;">Shepherd Visits (period)</h4>
+            <p class="muted-note">Elders see visits for currently allocated active Priests; Overseers see visits recorded for Priests in their Overseership, including inactive Priests. Each family or individual is counted once per row; family and individual visits are separate. Congregations reflect the name recorded at the visit.</p>
+            <div class="table-container"><table>
+              <thead><tr><th id="supervisor-shepherd-group-heading">Congregation</th><th>Families Visited</th><th>Individuals Visited</th><th>Total</th></tr></thead>
+              <tbody id="supervisor-shepherd-body"><tr><td colspan="4">Loading Shepherd visits...</td></tr></tbody>
+            </table></div>
           </div>
           <div id="priest-report-panel" class="dash-card report-layout-item" data-report-layout-item style="background:#f5f8fb;display:none;">
             <h4 id="priest-report-title" style="margin-top:0; color:#323130; font-size:1rem;">My Responsibility Report</h4>
@@ -2739,6 +2853,8 @@
     ];
     const DEFAULT_REPORT_LAYOUT_ORDER = [
       'sunday-school-only-report',
+      'priest-shepherd-report',
+      'supervisor-shepherd-report',
       'priest-report-panel',
       'report-summary-section',
       'report-attendance-charts-section',
@@ -3158,6 +3274,7 @@
             'view-sunday-school',
             'view-testimony',
             'view-prophetic',
+            'view-shepherd',
             'view-tithes',
             'view-hospitals',
             'view-reporting',
@@ -3174,10 +3291,11 @@
             (selectedView !== 'view-overseership-management' || isSystemAdmin) &&
             (selectedView !== 'view-apostleship' || canViewApostleDashboard()) &&
             (!isApostle || selectedView === 'view-apostleship') &&
-            (selectedView !== 'view-admin-activity' || isAdministrator()) &&
+            (selectedView !== 'view-admin-activity' || isTenantAdministrator()) &&
             (selectedView !== 'view-account-invitations' || canManageAccountInvitations()) &&
             (selectedView !== 'view-priest-allocation' || currentUserIsPriest || isSystemAdmin) &&
-            (!isSundaySchoolOnlyPriest() || ['view-sunday-school', 'view-reporting', 'view-priest-allocation', 'view-my-information'].includes(selectedView));
+            (selectedView !== 'view-shepherd' || canOpenShepherd()) &&
+            (!isSundaySchoolOnlyPriest() || ['view-sunday-school', 'view-reporting', 'view-priest-allocation', 'view-my-information', 'view-shepherd'].includes(selectedView));
           switchView(canOpenSelectedView ? selectedView : defaultView);
         } else {
           currentUser = null;
@@ -3413,7 +3531,7 @@
       configureDashboardRoleAccess();
       configureMemberCsvControls();
       const activityNav = document.getElementById('admin-activity-nav');
-      if (activityNav) activityNav.hidden = !isAdministrator() || isUnderdeacon();
+      if (activityNav) activityNav.hidden = !isTenantAdministrator() || isUnderdeacon();
       const { data: overseershipRows, error: overseershipError } = await supabaseClient.rpc(
         'list_accessible_overseerships'
       );
@@ -3462,7 +3580,7 @@
       document.getElementById('app-title').textContent = workspaceName;
       document.title = `${workspaceName} Executive Dashboard`;
       document.getElementById('user-role-display').innerText =
-        `Role: ${isSystemAdmin ? 'System Admin' : isApostle ? 'Apostle (view only)' : currentUserProfile.role} | Workspace: ${workspaceName}`;
+        `Role: ${isSystemAdmin ? 'System Admin' : isApostle ? 'Apostle (view only)' : currentUserIsOverseer ? 'Overseer (Overseership Admin)' : currentUserProfile.role} | Workspace: ${workspaceName}`;
       const testDataButton = document.getElementById('generate-tenant-test-data');
       if (testDataButton) {
         const overseershipId = String(data.overseership_id);
@@ -4022,8 +4140,8 @@
     }
 
     function switchView(viewId) {
-      if (isSundaySchoolOnlyPriest() && !['view-sunday-school', 'view-reporting', 'view-priest-allocation', 'view-my-information'].includes(viewId)) {
-        alert('Sunday School Priests can access Sunday School, its reporting, member allocation and My Information.');
+      if (isSundaySchoolOnlyPriest() && !['view-sunday-school', 'view-reporting', 'view-priest-allocation', 'view-my-information', 'view-shepherd'].includes(viewId)) {
+        alert('Sunday School Priests can access Sunday School, Shepherd, its reporting, member allocation and My Information.');
         return;
       }
       if (viewId !== 'view-sunday-school' && document.getElementById('view-sunday-school').classList.contains('active')) {
@@ -4054,7 +4172,10 @@
       if (viewId === 'view-priest-allocation' && !currentUserIsPriest && !isSystemAdmin) {
         throw new Error('Priest or System Admin access is required to allocate members.');
       }
-      if (viewId === 'view-admin-activity' && !isAdministrator()) {
+      if (viewId === 'view-shepherd' && !canOpenShepherd()) {
+        throw new Error('Priest, Elder, Overseer or System Admin access is required for Shepherd.');
+      }
+      if (viewId === 'view-admin-activity' && !isTenantAdministrator()) {
         throw new Error('Administrator access is required to view the activity log.');
       }
       if (viewId === 'view-overseership-management' && !isSystemAdmin) {
@@ -4085,6 +4206,7 @@
       if (viewId === 'view-apostleship') openApostleDashboard();
       if (viewId === 'view-testimony') setupTestimonyModule();
       if (viewId === 'view-prophetic') setupPropheticModule();
+      if (viewId === 'view-shepherd') openShepherdModule();
       if (viewId === 'view-tithes') setupTithesModule();
       if (viewId === 'view-hospitals') setupHospitalsModule();
       if (viewId === 'view-reporting') loadReportData();
@@ -4098,6 +4220,10 @@
       // Also check if currentUserProfile has admin role
       return Boolean(currentUserProfile) &&
         String(currentUserProfile.role || '').toLowerCase() === 'admin';
+    }
+
+    function isTenantAdministrator() {
+      return isAdministrator() || (currentUserIsOverseer && !isApostle);
     }
 
     let myInformationRequest = 0;
@@ -4216,6 +4342,16 @@
       return currentUserIsPriest && !isAdministrator();
     }
 
+    function isShepherdSupervisor() {
+      return !isSystemAdmin && !currentUserIsPriest &&
+        ['Elder', 'Elder Sister', 'Overseer', 'Overseer Sister'].includes(currentUserRoleGroup);
+    }
+
+    function canOpenShepherd() {
+      return !isApostle && !isUnderdeacon() &&
+        (isSystemAdmin || currentUserIsPriest || isShepherdSupervisor());
+    }
+
     function currentPriestAssignmentRole() {
       if (!isPriestOnly()) return '';
       const email = String(currentUser?.email || '').trim().toLowerCase();
@@ -4229,7 +4365,7 @@
     }
 
     function canOpenSundaySchool() {
-      if (isAdministrator()) return true;
+      if (isTenantAdministrator()) return true;
       if (['sunday school', 'sunday school and youth', 'youth & sunday school',
         'youth and sunday school', 'shepherd and sunday school'].includes(currentPriestAssignmentRole())) return true;
       if (isPriestOnly() || isUnderdeacon() || isApostle) return false;
@@ -4589,7 +4725,7 @@
     // For a signed-in Elder (not admin/priest/underdeacon): the members allocated to him directly,
     // via his Priests, and their linked family, plus the congregations he serves. Otherwise null.
     function getElderResponsibilityScope() {
-      if (isAdministrator() || currentUserIsPriest || isUnderdeacon()) return null;
+      if (isTenantAdministrator() || currentUserIsPriest || isUnderdeacon()) return null;
       const email = String(currentUser?.email || '').trim().toLowerCase();
       const elder = email ? cachedElders.find(person =>
         String(person.email || '').trim().toLowerCase() === email) : null;
@@ -5315,6 +5451,7 @@
       if (canOpenSundaySchool()) permittedViews.add('view-sunday-school');
       if (canManageAccountInvitations()) permittedViews.add('view-account-invitations');
       if (currentUserIsPriest || isSystemAdmin) permittedViews.add('view-priest-allocation');
+      if (canOpenShepherd()) permittedViews.add('view-shepherd');
       document.querySelectorAll('[data-dashboard-view]').forEach(element => {
         element.hidden = !permittedViews.has(element.dataset.dashboardView);
       });
@@ -5829,7 +5966,7 @@
     async function loadUserActivityLog() {
       const body = document.getElementById('admin-activity-body');
       const status = document.getElementById('admin-activity-status');
-      if (!body || !status || !isAdministrator()) return;
+      if (!body || !status || !isTenantAdministrator()) return;
       status.textContent = 'Loading Admin Activity...';
       try {
         let activityQuery = supabaseClient
@@ -5841,6 +5978,8 @@
         const overseershipId = isSystemAdmin ? activityFilter?.value : '';
         if (overseershipId) {
           activityQuery = activityQuery.eq('overseership_id', overseershipId);
+        } else if (!isSystemAdmin && currentUserProfile?.overseership_id) {
+          activityQuery = activityQuery.eq('overseership_id', currentUserProfile.overseership_id);
         }
         const { data, error } = await activityQuery;
         if (error) throw error;
@@ -5994,7 +6133,7 @@
     }
 
     function exportUserActivityLog() {
-      if (!isAdministrator()) return;
+      if (!isTenantAdministrator()) return;
       if (!cachedUserActivity.length) {
         window.alert('Load Admin Activity before downloading the CSV file.');
         return;
@@ -7442,15 +7581,16 @@
           <td>${escapeHospitalHtml(member.contact_number || member.email || '')}</td>
           <td>${escapeHospitalHtml(congregation ? congregation.congregation_name : '')}</td>
           <td>${escapeHospitalHtml(member.archived_at ? String(member.archived_at).slice(0, 10) : '')}</td>
-          <td>${isAdministrator() && !member.is_deceased && String(member.status || '').toLowerCase() !== 'deceased'
-            ? `<button type="button" class="btn btn-success" style="padding:4px 8px;font-size:0.75rem;" onclick="restoreMemberToMain(decodeURIComponent('${encodedId}'))">Restore</button> ` : ''}<button type="button" class="btn btn-danger" style="padding:4px 8px;font-size:0.75rem;" onclick="permanentlyDeleteMember(decodeURIComponent('${encodedId}'))">Permanently Delete</button></td>
+          <td>${isTenantAdministrator() && !member.is_deceased && String(member.status || '').toLowerCase() !== 'deceased'
+            ? `<button type="button" class="btn btn-success" style="padding:4px 8px;font-size:0.75rem;" onclick="restoreMemberToMain(decodeURIComponent('${encodedId}'))">Restore</button> ` : ''}${canPermanentlyDeleteRemovedMembers()
+            ? `<button type="button" class="btn btn-danger" style="padding:4px 8px;font-size:0.75rem;" onclick="permanentlyDeleteMember(decodeURIComponent('${encodedId}'))">Permanently Delete</button>` : ''}</td>
         </tr>`;
       }).join('') : '<tr><td colspan="7" style="text-align:center;">No removed member records.</td></tr>';
     }
 
     async function restoreMemberToMain(memberId) {
       const member = cachedMembers.find(item => String(item.member_id) === String(memberId));
-      if (!member || !isAdministrator()) {
+      if (!member || !isTenantAdministrator()) {
         window.alert('This member is unavailable or you do not have administrator access.');
         return;
       }
@@ -7488,7 +7628,19 @@
       }
     }
 
+    function canPermanentlyDeleteRemovedMembers() {
+      return [
+        'Overseer', 'Overseer Sister',
+        'Evangelist', 'Evangelist Sister',
+        'Prophet', 'Prophet Sister'
+      ].includes(currentUserRoleGroup);
+    }
+
     async function permanentlyDeleteMember(memberId) {
+      if (!canPermanentlyDeleteRemovedMembers()) {
+        window.alert('Only Overseers, Evangelists, or Prophets can permanently delete removed members.');
+        return;
+      }
       const member = cachedMembers.find(item =>
         String(item.member_id) === String(memberId) && item.archive_reason === 'Removed'
       );
@@ -7621,7 +7773,7 @@
         const editAction = record.editMemberId
           ? `<button type="button" class="btn btn-secondary" style="padding:4px 8px;font-size:0.75rem;" onclick="openEditModal(decodeURIComponent('${encodeURIComponent(String(record.editMemberId))}'))">${escapeHospitalHtml(record.editLabel)}</button>`
           : '<span class="muted-note">Unavailable</span>';
-        const restoreAction = isAdministrator() && record.canRestore
+        const restoreAction = isTenantAdministrator() && record.canRestore
           ? ` <button type="button" class="btn btn-success" style="padding:4px 8px;font-size:0.75rem;" onclick="restoreMemberToMain(decodeURIComponent('${encodeURIComponent(String(record.editMemberId))}'))">Restore</button>`
           : '';
         return `<tr>
@@ -7641,10 +7793,7 @@
 
     function canManageCsvDirectory() {
       if (isUnderdeacon()) return false;
-      if (isSystemAdmin) return true;
-      return Boolean(currentUserProfile) &&
-        String(currentUserProfile.role || '').toLowerCase() === 'admin' &&
-        currentUserIsOverseer;
+      return isSystemAdmin || (isTenantAdministrator() && currentUserIsOverseer);
     }
 
     function canImportMembersCSV() {
@@ -10165,6 +10314,466 @@
       });
     }
 
+    let shepherdTargets = [];
+    let shepherdPriests = [];
+    let shepherdOfficerAssignments = [];
+    let shepherdRequestId = 0;
+    let shepherdSaving = false;
+    let elderShepherdPriests = [];
+    let elderShepherdAssignments = [];
+    let elderShepherdRequestId = 0;
+    let elderShepherdSaving = false;
+
+    async function loadShepherdPages(name, args = {}) {
+      const rows = [];
+      let total;
+      do {
+        const { data, error, count } = await supabaseClient.rpc(name, args, { count: 'exact' })
+          .range(rows.length, rows.length + 999);
+        if (error) throw error;
+        if (!Array.isArray(data) || count === null || count === undefined) {
+          throw new Error('The database returned an incomplete response.');
+        }
+        total = count;
+        if (!data.length && rows.length < total) throw new Error('The database returned an incomplete page.');
+        rows.push(...data);
+      } while (rows.length < total);
+      return rows;
+    }
+
+    function shepherdPriestServesCongregation(priest, congregationId, assignments) {
+      const congregation = cachedCongregations.find(item => String(item.congregation_id) === congregationId);
+      if (!congregation) return false;
+      const today = localDateString();
+      return priest.congregation_name === congregation.congregation_name || assignments.some(assignment =>
+        String(assignment.officer_member_id) === String(priest.member_id) &&
+        String(assignment.congregation_id) === congregationId &&
+        assignment.start_date && assignment.start_date <= today &&
+        (!assignment.end_date || assignment.end_date >= today)
+      );
+    }
+
+    function canRecordElderShepherdVisit() {
+      return isSystemAdmin || (isShepherdSupervisor() && ['Elder', 'Elder Sister'].includes(currentUserRoleGroup));
+    }
+
+    async function loadElderShepherdModule() {
+      if (elderShepherdSaving) return;
+      const requestId = ++elderShepherdRequestId;
+      const visible = isSystemAdmin || isShepherdSupervisor();
+      const chooseElder = isSystemAdmin || (visible && !canRecordElderShepherdVisit());
+      const section = document.getElementById('shepherd-elder-section');
+      section.hidden = !visible;
+      if (!visible) return;
+      document.getElementById('shepherd-elder-select-group').hidden = !chooseElder;
+      document.getElementById('shepherd-elder-admin-note').hidden = !isSystemAdmin;
+      document.getElementById('shepherd-elder-date-group').hidden = !canRecordElderShepherdVisit();
+      document.getElementById('shepherd-elder-save').hidden = !canRecordElderShepherdVisit();
+      document.getElementById('shepherd-elder-readonly').hidden = canRecordElderShepherdVisit();
+      setTodayIfEmpty('shepherd-elder-date');
+      if (!chooseElder) return loadElderShepherdSelection();
+      const select = document.getElementById('shepherd-elder-select');
+      const previous = select.value;
+      select.disabled = true;
+      document.getElementById('shepherd-elder-congregation').disabled = true;
+      document.getElementById('shepherd-elder-target').value = '';
+      document.getElementById('shepherd-elder-save').disabled = true;
+      document.getElementById('shepherd-elder-priests').innerHTML = '<p class="muted-note">Loading Elders...</p>';
+      document.getElementById('shepherd-elder-history').innerHTML = '<tr><td colspan="3">Loading Elders...</td></tr>';
+      setModuleStatus('shepherd-elder-status', '', '');
+      try {
+        const elders = await loadShepherdPages('shepherd_visible_elders');
+        if (requestId !== elderShepherdRequestId) return;
+        select.innerHTML = '<option value="">-- Select Elder --</option>' + elders.map(elder =>
+          `<option value="${escapeHospitalHtml(elder.member_id)}">${escapeHospitalHtml(elder.elder_name)} · ${escapeHospitalHtml(elder.congregation_name)}</option>`
+        ).join('');
+        select.value = elders.some(elder => String(elder.member_id) === previous) ? previous : '';
+        select.disabled = !elders.length;
+        await loadElderShepherdSelection();
+        if (!elders.length) setModuleStatus('shepherd-elder-status', 'No active Elders found in this Overseership.', 'error');
+      } catch (error) {
+        if (requestId !== elderShepherdRequestId) return;
+        console.error('Could not load Shepherd Elders:', error);
+        document.getElementById('shepherd-elder-priests').innerHTML = '<p class="muted-note">Elders could not be loaded.</p>';
+        document.getElementById('shepherd-elder-history').innerHTML = '<tr><td colspan="3">Visit history could not be loaded.</td></tr>';
+        setModuleStatus('shepherd-elder-status', `Could not load Elders: ${error.message || 'Unexpected error.'}`, 'error');
+      }
+    }
+
+    async function loadElderShepherdSelection() {
+      if (elderShepherdSaving) return;
+      const requestId = ++elderShepherdRequestId;
+      const chooseElder = isSystemAdmin || !canRecordElderShepherdVisit();
+      const elderId = chooseElder ? document.getElementById('shepherd-elder-select').value : null;
+      const congregation = document.getElementById('shepherd-elder-congregation');
+      const previous = congregation.value;
+      const list = document.getElementById('shepherd-elder-priests');
+      const history = document.getElementById('shepherd-elder-history');
+      elderShepherdPriests = [];
+      elderShepherdAssignments = [];
+      document.getElementById('shepherd-elder-target').value = '';
+      document.getElementById('shepherd-elder-save').disabled = true;
+      congregation.disabled = true;
+      list.innerHTML = '<p class="muted-note">Loading allocated Priests...</p>';
+      history.innerHTML = '<tr><td colspan="3">Loading visit history...</td></tr>';
+      setModuleStatus('shepherd-elder-status', '', '');
+      if (chooseElder && !elderId) {
+        list.innerHTML = '<p class="muted-note">Select an Elder to view allocated Priests.</p>';
+        history.innerHTML = '<tr><td colspan="3">Select an Elder to view visit history.</td></tr>';
+        return;
+      }
+      const args = { target_elder_id: elderId };
+      const results = await Promise.allSettled([
+        loadShepherdPages('shepherd_elder_priests', args),
+        loadShepherdPages('list_officer_congregation_assignments', { target_overseership_id: getCurrentOverseershipId() }),
+        loadShepherdPages('shepherd_elder_visit_history', args)
+      ]);
+      if (requestId !== elderShepherdRequestId) return;
+      const errors = [];
+      if (results[0].status === 'fulfilled' && results[1].status === 'fulfilled') {
+        elderShepherdPriests = results[0].value;
+        elderShepherdAssignments = results[1].value;
+        congregation.innerHTML = '<option value="">-- Select Congregation --</option>' + cachedCongregations
+          .slice().sort((a, b) => a.congregation_name.localeCompare(b.congregation_name)).map(item =>
+            `<option value="${escapeHospitalHtml(item.congregation_id)}">${escapeHospitalHtml(item.congregation_name)}</option>`
+          ).join('');
+        congregation.value = cachedCongregations.some(item => String(item.congregation_id) === previous) ? previous : '';
+        congregation.disabled = !cachedCongregations.length;
+        renderElderShepherdPriests();
+      } else {
+        const error = results[0].status === 'rejected' ? results[0].reason : results[1].reason;
+        console.error('Could not load Elder Shepherd allocations:', error);
+        list.innerHTML = '<p class="muted-note">Allocated Priests could not be loaded.</p>';
+        errors.push(`Could not load allocated Priests: ${error.message || 'Unexpected error.'}`);
+      }
+      if (results[2].status === 'fulfilled') {
+        const visits = results[2].value;
+        history.innerHTML = visits.length ? visits.map(visit =>
+          `<tr><td>${escapeHospitalHtml(visit.visit_date)}</td><td>${escapeHospitalHtml(visit.priest_name)}</td><td>${escapeHospitalHtml(visit.congregation_name)}</td></tr>`
+        ).join('') : '<tr><td colspan="3">No visits recorded in the last three months.</td></tr>';
+      } else {
+        console.error('Could not load Elder Shepherd history:', results[2].reason);
+        history.innerHTML = '<tr><td colspan="3">Visit history could not be loaded.</td></tr>';
+        errors.push(`Could not load visit history: ${results[2].reason.message || 'Unexpected error.'}`);
+      }
+      if (errors.length) setModuleStatus('shepherd-elder-status', errors.join(' '), 'error');
+    }
+
+    function renderElderShepherdPriests() {
+      if (elderShepherdSaving) return;
+      const congregationId = document.getElementById('shepherd-elder-congregation').value;
+      const list = document.getElementById('shepherd-elder-priests');
+      const canRecord = canRecordElderShepherdVisit();
+      document.getElementById('shepherd-elder-target').value = '';
+      document.getElementById('shepherd-elder-save').disabled = true;
+      if (!congregationId) {
+        list.innerHTML = '<p class="muted-note">Select a congregation to view Priests.</p>';
+        return;
+      }
+      const priests = elderShepherdPriests.filter(priest =>
+        shepherdPriestServesCongregation(priest, congregationId, elderShepherdAssignments)
+      );
+      if (!priests.length) {
+        list.innerHTML = '<p class="muted-note">No allocated Priests found for this congregation.</p>';
+        return;
+      }
+      list.innerHTML = `<table class="attendance-table"><thead><tr>${canRecord ? '<th class="attendance-select-cell">Select</th>' : ''}<th>Priest</th><th>Home Congregation</th></tr></thead><tbody>` +
+        priests.map(priest => `<tr>${canRecord ? `<td class="attendance-select-cell"><input type="radio" name="shepherd-elder-priest" value="${escapeHospitalHtml(priest.member_id)}" aria-label="Select ${escapeHospitalHtml(priest.priest_name)}" onchange="selectElderShepherdPriest(this.value)"></td>` : ''}<td>${escapeHospitalHtml(priest.priest_name)}</td><td>${escapeHospitalHtml(priest.congregation_name)}</td></tr>`).join('') +
+        '</tbody></table>';
+    }
+
+    function selectElderShepherdPriest(priestId) {
+      const congregationId = document.getElementById('shepherd-elder-congregation').value;
+      const valid = canRecordElderShepherdVisit() && !elderShepherdSaving && elderShepherdPriests.some(priest =>
+        String(priest.member_id) === priestId && shepherdPriestServesCongregation(priest, congregationId, elderShepherdAssignments)
+      );
+      document.getElementById('shepherd-elder-target').value = valid ? priestId : '';
+      document.getElementById('shepherd-elder-save').disabled = !valid;
+    }
+
+    async function saveElderShepherdVisit(event) {
+      event.preventDefault();
+      if (elderShepherdSaving) return;
+      if (!canRecordElderShepherdVisit()) {
+        setModuleStatus('shepherd-elder-status', 'Elder visits are read-only for your role.', 'error');
+        return;
+      }
+      const elderSelect = document.getElementById('shepherd-elder-select');
+      const congregation = document.getElementById('shepherd-elder-congregation');
+      const target = document.getElementById('shepherd-elder-target');
+      const dateInput = document.getElementById('shepherd-elder-date');
+      const date = dateInput.value;
+      const valid = elderShepherdPriests.some(priest =>
+        String(priest.member_id) === target.value &&
+        shepherdPriestServesCongregation(priest, congregation.value, elderShepherdAssignments)
+      );
+      if (!valid || !date || (isSystemAdmin && !elderSelect.value)) {
+        setModuleStatus('shepherd-elder-status', 'Select an allocated Priest, congregation and visit date.', 'error');
+        return;
+      }
+      elderShepherdSaving = true;
+      const previousElderDisabled = elderSelect.disabled;
+      congregation.disabled = true;
+      elderSelect.disabled = true;
+      dateInput.disabled = true;
+      document.getElementById('shepherd-elder-save').disabled = true;
+      document.querySelectorAll('#shepherd-elder-priests input[name="shepherd-elder-priest"]').forEach(input => { input.disabled = true; });
+      try {
+        const { data, error } = await supabaseClient.rpc('save_elder_shepherd_visit', {
+          target_elder_id: isSystemAdmin ? elderSelect.value : null,
+          target_priest_id: target.value, target_congregation_id: congregation.value, visited_on: date
+        });
+        if (error) throw error;
+        if (!data) throw new Error('The database did not confirm the visit was saved.');
+        elderShepherdSaving = false;
+        await loadElderShepherdSelection();
+        const status = document.getElementById('shepherd-elder-status');
+        setModuleStatus('shepherd-elder-status', `Visit recorded.${status.textContent ? ` ${status.textContent}` : ''}`,
+          status.textContent ? 'error' : 'success');
+      } catch (error) {
+        console.error('Could not save Elder Shepherd visit:', error);
+        setModuleStatus('shepherd-elder-status', error.message || 'Could not save the visit.', 'error');
+        congregation.disabled = false;
+      } finally {
+        elderShepherdSaving = false;
+        elderSelect.disabled = previousElderDisabled;
+        dateInput.disabled = false;
+        document.querySelectorAll('#shepherd-elder-priests input[name="shepherd-elder-priest"]').forEach(input => { input.disabled = false; });
+        document.getElementById('shepherd-elder-save').disabled = !target.value;
+      }
+    }
+
+    function shepherdTargetLabel(target) {
+      const prefix = target.target_kind === 'family' ? 'Family of'
+        : target.target_kind === 'spouse' ? 'Spouse' : 'Member';
+      return `${prefix}: ${target.target_name}`;
+    }
+
+    function shepherdCongregationName() {
+      const id = document.getElementById('shepherd-congregation').value;
+      if (!id) return '';
+      return cachedCongregations.find(congregation => String(congregation.congregation_id) === id)?.congregation_name || null;
+    }
+
+    function renderShepherdAllocations() {
+      const congregation = shepherdCongregationName();
+      const supervisor = isShepherdSupervisor();
+      const targets = shepherdTargets.map((target, index) => ({ target, index }))
+        .filter(item => congregation === '' || item.target.congregation_name === congregation);
+      document.getElementById('shepherd-target').value = '';
+      document.getElementById('shepherd-save').disabled = true;
+      const list = document.getElementById(supervisor ? 'shepherd-allocation-body' : 'shepherd-member-list');
+      if (!targets.length) {
+        list.innerHTML = '<p class="muted-note">No allocated families or members found for this congregation.</p>';
+        return;
+      }
+      const rows = targets.map(({ target, index }) => {
+        const label = shepherdTargetLabel(target);
+        const selection = supervisor ? '' : `<td class="attendance-select-cell"><input type="radio" name="shepherd-visit-target" value="${index}" aria-label="Select ${escapeHospitalHtml(label)}" onchange="selectShepherdTarget(this.value)"></td>`;
+        return `<tr${target.target_kind === 'family' ? ' class="attendance-family-row"' : ''}>${selection}<td>${escapeHospitalHtml(label)}</td><td>${escapeHospitalHtml(target.congregation_name)}</td></tr>`;
+      }).join('');
+      list.innerHTML = `<table class="attendance-table"><thead><tr>${supervisor ? '' : '<th class="attendance-select-cell">Select</th>'}<th>Member / Family</th><th>Congregation</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function selectShepherdTarget(value) {
+      const index = Number(value);
+      const target = value !== '' && Number.isInteger(index) ? shepherdTargets[index] : null;
+      const congregation = shepherdCongregationName();
+      const valid = target && (congregation === '' || target.congregation_name === congregation);
+      document.getElementById('shepherd-target').value = valid ? value : '';
+      document.getElementById('shepherd-save').disabled = !valid || isShepherdSupervisor() || shepherdSaving;
+    }
+
+    async function openShepherdModule() {
+      if (shepherdSaving || elderShepherdSaving) return;
+      void loadElderShepherdModule();
+      const requestId = ++shepherdRequestId;
+      const priestSelect = document.getElementById('shepherd-priest');
+      const congregation = document.getElementById('shepherd-congregation');
+      const supervisor = isShepherdSupervisor();
+      document.getElementById('shepherd-priest-group').hidden = !isSystemAdmin && !supervisor;
+      document.getElementById('shepherd-admin-note').hidden = !isSystemAdmin;
+      document.getElementById('shepherd-visit-form').hidden = supervisor;
+      document.getElementById('shepherd-allocations').hidden = !supervisor;
+      if (!isSystemAdmin && !supervisor) return setupShepherdModule();
+      const previousPriest = priestSelect.value;
+      priestSelect.disabled = true;
+      priestSelect.innerHTML = '<option value="">-- Select Congregation First --</option>';
+      shepherdTargets = [];
+      shepherdPriests = [];
+      shepherdOfficerAssignments = [];
+      document.getElementById('shepherd-target').value = '';
+      const previousCongregation = congregation.value;
+      congregation.innerHTML = '<option value="">-- Select Congregation --</option>' + cachedCongregations
+        .slice().sort((a, b) => a.congregation_name.localeCompare(b.congregation_name)).map(item =>
+          `<option value="${escapeHospitalHtml(item.congregation_id)}">${escapeHospitalHtml(item.congregation_name)}</option>`
+        ).join('');
+      congregation.value = cachedCongregations.some(item => String(item.congregation_id) === previousCongregation) ? previousCongregation : '';
+      congregation.disabled = true;
+      document.getElementById('shepherd-allocation-body').innerHTML = '<p class="muted-note">Select a Priest to view allocations.</p>';
+      document.getElementById('shepherd-member-list').innerHTML = '<p class="muted-note">Select a Priest to view allocations.</p>';
+      document.getElementById('shepherd-save').disabled = true;
+      document.getElementById('shepherd-history').innerHTML = '<tr><td colspan="3">Loading priests...</td></tr>';
+      setModuleStatus('shepherd-status', '', '');
+      try {
+        const [priests, assignments] = await Promise.all([
+          loadShepherdPages(supervisor ? 'shepherd_supervisor_priests' : 'shepherd_admin_priests'),
+          loadShepherdPages('list_officer_congregation_assignments', { target_overseership_id: getCurrentOverseershipId() })
+        ]);
+        if (requestId !== shepherdRequestId) return;
+        shepherdPriests = priests;
+        shepherdOfficerAssignments = assignments;
+        congregation.disabled = !cachedCongregations.length;
+        await onShepherdCongregationChange(previousPriest);
+        if (!shepherdPriests.length) setModuleStatus('shepherd-status', 'No active Priests found in this Overseership.', 'error');
+      } catch (error) {
+        if (requestId !== shepherdRequestId) return;
+        console.error('Could not load Shepherd priests or assignments:', error);
+        priestSelect.innerHTML = '<option value="">Priests or assignments could not be loaded.</option>';
+        document.getElementById('shepherd-history').innerHTML = '<tr><td colspan="3">Visit history could not be loaded.</td></tr>';
+        setModuleStatus('shepherd-status', `Could not load Priests or assignments: ${error.message || 'Unexpected error.'}`, 'error');
+      }
+    }
+
+    async function onShepherdCongregationChange(preferredPriestId) {
+      if (shepherdSaving) return;
+      if (!isSystemAdmin && !isShepherdSupervisor()) {
+        renderShepherdAllocations();
+        return;
+      }
+      const congregationId = document.getElementById('shepherd-congregation').value;
+      const congregationName = shepherdCongregationName();
+      const priestSelect = document.getElementById('shepherd-priest');
+      const previous = preferredPriestId === undefined ? priestSelect.value : preferredPriestId;
+      const priests = congregationId && congregationName ? shepherdPriests.filter(priest =>
+        shepherdPriestServesCongregation(priest, congregationId, shepherdOfficerAssignments)
+      ) : [];
+      priestSelect.innerHTML = `<option value="">${congregationId ? '-- Select Priest --' : '-- Select Congregation First --'}</option>` + priests.map(priest =>
+        `<option value="${escapeHospitalHtml(priest.member_id)}">${escapeHospitalHtml(priest.priest_name)} · ${escapeHospitalHtml(priest.congregation_name)}</option>`
+      ).join('');
+      priestSelect.value = priests.some(priest => String(priest.member_id) === previous) ? previous : '';
+      priestSelect.disabled = !priests.length;
+      await setupShepherdModule();
+      if (document.getElementById('shepherd-congregation').value === congregationId && congregationId && !priests.length) {
+        setModuleStatus('shepherd-status', 'No authorized Priests found for this congregation.', 'error');
+      }
+    }
+
+    async function setupShepherdModule() {
+      if (shepherdSaving) return;
+      const requestId = ++shepherdRequestId;
+      const selector = document.getElementById('shepherd-target');
+      const body = document.getElementById('shepherd-history');
+      const button = document.getElementById('shepherd-save');
+      const supervisor = isShepherdSupervisor();
+      const congregation = document.getElementById('shepherd-congregation');
+      const previousCongregation = congregation.value;
+      shepherdTargets = [];
+      selector.value = '';
+      if (!isSystemAdmin && !supervisor) congregation.disabled = true;
+      button.disabled = true;
+      document.getElementById('shepherd-member-list').innerHTML = '<p class="muted-note">Loading allocations...</p>';
+      body.innerHTML = '<tr><td colspan="3">Loading visit history...</td></tr>';
+      setModuleStatus('shepherd-status', '', '');
+      setTodayIfEmpty('shepherd-visit-date');
+      if (supervisor) document.getElementById('shepherd-allocation-body').innerHTML =
+        '<p class="muted-note">Loading allocations...</p>';
+      const priestId = (isSystemAdmin || supervisor) ? document.getElementById('shepherd-priest').value : '';
+      if ((isSystemAdmin || supervisor) && (!priestId || !shepherdCongregationName())) {
+        document.getElementById('shepherd-member-list').innerHTML = '<p class="muted-note">Select a Priest to view allocations.</p>';
+        body.innerHTML = '<tr><td colspan="3">Select a Priest to view visit history.</td></tr>';
+        if (supervisor) document.getElementById('shepherd-allocation-body').innerHTML =
+          '<p class="muted-note">Select a Priest to view allocations.</p>';
+        return;
+      }
+      const args = (isSystemAdmin || supervisor) ? { target_priest_id: priestId } : {};
+      const results = await Promise.allSettled([
+        loadShepherdPages(supervisor ? 'shepherd_supervisor_targets' : isSystemAdmin ? 'shepherd_admin_targets' : 'shepherd_visit_targets', args),
+        loadShepherdPages(supervisor ? 'shepherd_supervisor_history' : isSystemAdmin ? 'shepherd_admin_history' : 'shepherd_visit_history', args)
+      ]);
+      if (requestId !== shepherdRequestId) return;
+      const errors = [];
+      if (results[0].status === 'fulfilled') {
+        shepherdTargets = results[0].value;
+        if (!isSystemAdmin && !supervisor) {
+          const names = new Set(shepherdTargets.map(target => target.congregation_name));
+          const congregations = cachedCongregations.filter(item => names.has(item.congregation_name))
+            .sort((a, b) => a.congregation_name.localeCompare(b.congregation_name));
+          congregation.innerHTML = '<option value="">All Congregations</option>' + congregations.map(item =>
+            `<option value="${escapeHospitalHtml(item.congregation_id)}">${escapeHospitalHtml(item.congregation_name)}</option>`
+          ).join('');
+          congregation.value = congregations.some(item => String(item.congregation_id) === previousCongregation) ? previousCongregation : '';
+          congregation.disabled = !congregations.length;
+        }
+        renderShepherdAllocations();
+      } else {
+        console.error('Could not load Shepherd allocations:', results[0].reason);
+        document.getElementById('shepherd-member-list').innerHTML = '<p class="muted-note">Allocations could not be loaded.</p>';
+        if (supervisor) document.getElementById('shepherd-allocation-body').innerHTML =
+          '<p class="muted-note">Allocations could not be loaded.</p>';
+        errors.push(`Could not load allocations: ${results[0].reason.message || 'Unexpected error.'}`);
+      }
+      if (results[1].status === 'fulfilled') {
+        const visits = results[1].value;
+        body.innerHTML = visits.length ? visits.map(visit =>
+          `<tr><td>${escapeHospitalHtml(visit.visit_date)}</td><td>${escapeHospitalHtml(shepherdTargetLabel(visit))}</td><td>${escapeHospitalHtml(visit.congregation_name)}</td></tr>`
+        ).join('') : '<tr><td colspan="3">No visits recorded in the last three months.</td></tr>';
+      } else {
+        console.error('Could not load Shepherd visit history:', results[1].reason);
+        body.innerHTML = '<tr><td colspan="3">Visit history could not be loaded.</td></tr>';
+        errors.push(`Could not load visit history: ${results[1].reason.message || 'Unexpected error.'}`);
+      }
+      if (errors.length) setModuleStatus('shepherd-status', errors.join(' '), 'error');
+    }
+
+    async function saveShepherdVisit(event) {
+      event.preventDefault();
+      if (shepherdSaving) return;
+      if (isShepherdSupervisor()) {
+        setModuleStatus('shepherd-status', 'Shepherd visits are read-only for your role.', 'error');
+        return;
+      }
+      const selector = document.getElementById('shepherd-target');
+      const index = Number(selector.value);
+      const target = selector.value !== '' && Number.isInteger(index) ? shepherdTargets[index] : null;
+      const congregation = document.getElementById('shepherd-congregation');
+      const visitDate = document.getElementById('shepherd-visit-date').value;
+      const congregationName = shepherdCongregationName();
+      if (!target || !visitDate || (congregationName !== '' && target.congregation_name !== congregationName)) {
+        setModuleStatus('shepherd-status', 'Select an allocated family or member and a visit date.', 'error');
+        return;
+      }
+      shepherdSaving = true;
+      document.getElementById('shepherd-save').disabled = true;
+      congregation.disabled = true;
+      document.querySelectorAll('#shepherd-member-list input[name="shepherd-visit-target"]').forEach(input => { input.disabled = true; });
+      const priestSelect = document.getElementById('shepherd-priest');
+      if (isSystemAdmin) priestSelect.disabled = true;
+      try {
+        const args = {
+          target_id: target.member_id, kind: target.target_kind, visited_on: visitDate
+        };
+        if (isSystemAdmin) args.target_priest_id = priestSelect.value;
+        const { data, error } = await supabaseClient.rpc(isSystemAdmin ? 'shepherd_admin_save' : 'save_shepherd_visit', args);
+        if (error) throw error;
+        if (!data) throw new Error('The database did not confirm the visit was saved.');
+        shepherdSaving = false;
+        await setupShepherdModule();
+        const status = document.getElementById('shepherd-status');
+        setModuleStatus('shepherd-status', `Visit recorded.${status.textContent ? ` ${status.textContent}` : ''}`,
+          status.textContent ? 'error' : 'success');
+      } catch (error) {
+        console.error('Could not save Shepherd visit:', error);
+        setModuleStatus('shepherd-status', error.message || 'Could not save the visit.', 'error');
+      } finally {
+        shepherdSaving = false;
+        if (isSystemAdmin) priestSelect.disabled = false;
+        congregation.disabled = isSystemAdmin ? !cachedCongregations.length : !shepherdTargets.length;
+        document.querySelectorAll('#shepherd-member-list input[name="shepherd-visit-target"]').forEach(input => { input.disabled = false; });
+        document.getElementById('shepherd-save').disabled = !selector.value;
+      }
+    }
+
     async function setupPropheticModule() {
       setModuleStatus('prophetic-status', '', '');
       setModuleStatus('prophetic-dream-status', '', '');
@@ -10974,6 +11583,16 @@
       loadReportData();
     }
 
+    function setReportLastCalendarMonth() {
+      const today = new Date();
+      document.getElementById('report-start-date').value =
+        localDateString(new Date(today.getFullYear(), today.getMonth() - 1, 1));
+      document.getElementById('report-end-date').value =
+        localDateString(new Date(today.getFullYear(), today.getMonth(), 0));
+      document.getElementById('report-month').value = '';
+      loadReportData();
+    }
+
     function getReportMonthWindow(monthValue) {
       const value = monthValue || localDateString().slice(0, 7);
       const [year, month] = value.split('-').map(Number);
@@ -11136,12 +11755,69 @@
       }
     }
 
+    function setShepherdReportValues(families, individuals, total) {
+      document.getElementById('priest-shepherd-families').textContent = families;
+      document.getElementById('priest-shepherd-individuals').textContent = individuals;
+      document.getElementById('priest-shepherd-total').textContent = total;
+    }
+
+    function isValidShepherdCount(value) {
+      return value !== null && value !== undefined &&
+        /^\d+$/.test(String(value)) && Number.isSafeInteger(Number(value));
+    }
+
+    function displayShepherdReport(result, errors) {
+      const row = Array.isArray(result.data) && result.data.length === 1 ? result.data[0] : null;
+      if (result.error || !row || !isValidShepherdCount(row.families_visited) || !isValidShepherdCount(row.individuals_visited) ||
+          !Number.isSafeInteger(Number(row.families_visited) + Number(row.individuals_visited))) {
+        setShepherdReportValues('Unavailable', 'Unavailable', 'Unavailable');
+        errors.push(`Shepherd visits unavailable: ${result.error?.message || 'Invalid response from the database.'}`);
+        return;
+      }
+      const families = Number(row.families_visited);
+      const individuals = Number(row.individuals_visited);
+      setShepherdReportValues(families, individuals, families + individuals);
+    }
+
+    function shepherdReportRequest(start, end) {
+      return supabaseClient.rpc('priest_shepherd_report', { start_date: start, end_date: end });
+    }
+
+    function displaySupervisorShepherdReport(result, errors) {
+      const body = document.getElementById('supervisor-shepherd-body');
+      if (result.error || !Array.isArray(result.data) || result.data.some(row =>
+        !row || typeof row.group_name !== 'string' || !isValidShepherdCount(row.families_visited) ||
+        !isValidShepherdCount(row.individuals_visited) ||
+        !Number.isSafeInteger(Number(row.families_visited) + Number(row.individuals_visited)))) {
+        body.innerHTML = '<tr><td colspan="4">Shepherd visit totals are unavailable.</td></tr>';
+        errors.push(`Shepherd visits unavailable: ${result.error?.message || 'Invalid response from the database.'}`);
+        return;
+      }
+      body.innerHTML = result.data.length ? result.data.map(row => {
+        const families = Number(row.families_visited);
+        const individuals = Number(row.individuals_visited);
+        return `<tr><td>${escapeHospitalHtml(row.group_name)}</td><td>${families}</td><td>${individuals}</td><td>${families + individuals}</td></tr>`;
+      }).join('') : '<tr><td colspan="4">No Priests are allocated to you.</td></tr>';
+    }
+
     async function loadReportData() {
       const requestId = ++reportLoadRequestId;
       const start = document.getElementById('report-start-date').value;
       const end = document.getElementById('report-end-date').value;
       const status = document.getElementById('report-chart-status');
       const sundaySchoolOnly = isSundaySchoolOnlyPriest();
+      const priestReport = isPriestOnly();
+      const supervisorReport = !isApostle && !isUnderdeacon() && (isSystemAdmin || isShepherdSupervisor());
+      const byCongregation = isSystemAdmin || currentUserIsOverseer;
+      document.getElementById('report-last-month').hidden = !priestReport && !supervisorReport;
+      document.getElementById('priest-shepherd-report').style.display = priestReport ? '' : 'none';
+      document.getElementById('supervisor-shepherd-report').style.display = supervisorReport ? '' : 'none';
+      document.getElementById('supervisor-shepherd-title').textContent =
+        `Shepherd Visits by ${byCongregation ? 'Congregation' : 'Priest'} (period)`;
+      document.getElementById('supervisor-shepherd-group-heading').textContent = byCongregation ? 'Congregation' : 'Priest';
+      document.getElementById('supervisor-shepherd-body').innerHTML =
+        '<tr><td colspan="4">Choose a valid date range to view Shepherd visits.</td></tr>';
+      setShepherdReportValues('Unavailable', 'Unavailable', 'Unavailable');
       document.getElementById('sunday-school-only-report').hidden = !sundaySchoolOnly;
       if (sundaySchoolOnly) {
         currentReportPeriod = null;
@@ -11155,26 +11831,31 @@
           status.textContent = 'Choose a valid date range (start date must not be after end date).';
           return;
         }
-        status.textContent = 'Loading Sunday School attendance…';
+        status.textContent = 'Loading Sunday School attendance and Shepherd visits…';
         total.textContent = 'Loading…';
+        setShepherdReportValues('Loading…', 'Loading…', 'Loading…');
         try {
-          const result = await sundaySchoolReportRequest(start, end);
+          const [result, shepherdResult] = await Promise.all([
+            sundaySchoolReportRequest(start, end), shepherdReportRequest(start, end)
+          ]);
           if (requestId !== reportLoadRequestId) return;
           const errors = [];
           displaySundaySchoolReport(result, 'sunday-school-only-report-total', errors);
+          displayShepherdReport(shepherdResult, errors);
           currentReportPeriod = { start, end };
           status.textContent = errors.length
             ? errors.join('. ')
-            : `Sunday School report loaded for ${start} to ${end}.`;
+            : `Sunday School and Shepherd reports loaded for ${start} to ${end}.`;
         } catch (error) {
           if (requestId !== reportLoadRequestId) return;
           total.textContent = 'Unavailable';
-          status.textContent = `Sunday School attendance unavailable: ${error.message || 'Unexpected error.'}`;
+          setShepherdReportValues('Unavailable', 'Unavailable', 'Unavailable');
+          status.textContent = `Could not load the report: ${error.message || 'Unexpected error.'}`;
         }
         return;
       }
       const sundaySchoolAllowed = canOpenSundaySchool() && !isUnderdeacon();
-      const priestMode = isPriestOnly();
+      const priestMode = priestReport;
       document.getElementById('report-sunday-school-card').hidden = !sundaySchoolAllowed || priestMode;
       document.getElementById('priest-sunday-school-card').hidden = !sundaySchoolAllowed || !priestMode;
       document.getElementById('report-total-sunday-school').textContent = 'Unavailable';
@@ -11216,6 +11897,9 @@
       ).length;
       status.style.display = 'block';
       status.textContent = 'Loading tenant-scoped report data…';
+      let supervisorShepherdDisplayed = false;
+      if (supervisorReport) document.getElementById('supervisor-shepherd-body').innerHTML =
+        '<tr><td colspan="4">Loading Shepherd visits...</td></tr>';
       try {
         const reportCongregations = getActualCongregations(cachedCongregations.filter(congregation =>
           String(congregation.overseership_id || '') === getCurrentOverseershipId()
@@ -11231,7 +11915,7 @@
         const testimonyQuery = tenantCongregationIdList.length
           ? supabaseClient.from('testimony_houses').select('*').in('congregation_id', tenantCongregationIdList)
           : Promise.resolve({ data: [], error: null });
-        const [attendanceResult, testimonyResult, testimonyVisitsResult, titheResult, propheticResult, dreamVisionResult, sundaySchoolResult] = await Promise.all([
+        const [attendanceResult, testimonyResult, testimonyVisitsResult, titheResult, propheticResult, dreamVisionResult, sundaySchoolResult, supervisorShepherdResult] = await Promise.all([
           supabaseClient.from('attendance_records').select('*').gte('activity_date', start).lte('activity_date', end),
           testimonyQuery,
           supabaseClient.from('testimony_house_visits').select('*').gte('visit_date', start).lte('visit_date', end),
@@ -11240,11 +11924,22 @@
             .gte('visit_date', start).lte('visit_date', end),
           supabaseClient.from('prophetic_dream_vision_records').select('*')
             .gte('event_date', start).lte('event_date', end),
-          sundaySchoolAllowed ? sundaySchoolReportRequest(start, end) : Promise.resolve(null)
+          sundaySchoolAllowed ? sundaySchoolReportRequest(start, end) : Promise.resolve(null),
+          supervisorReport
+            ? loadShepherdPages('shepherd_supervisor_report', { start_date: start, end_date: end })
+              .then(data => ({ data, error: null }), error => {
+                console.error('Could not load Shepherd report:', error);
+                return { data: null, error };
+              })
+            : Promise.resolve(null)
         ]);
         if (requestId !== reportLoadRequestId) return;
         const reportErrors = [];
         if (sundaySchoolResult) displaySundaySchoolReport(sundaySchoolResult, 'report-total-sunday-school', reportErrors);
+        if (supervisorShepherdResult) {
+          displaySupervisorShepherdReport(supervisorShepherdResult, reportErrors);
+          supervisorShepherdDisplayed = true;
+        }
         if (attendanceResult.error) reportErrors.push(`Attendance graph unavailable: ${attendanceResult.error.message}`);
         const attendanceRecords = attendanceResult.error
           ? []
@@ -11347,6 +12042,8 @@
           : `Reports loaded for ${start} to ${end}. ${tithes.length} tithe record(s) found.${chartNotice}`;
       } catch (error) {
         if (requestId !== reportLoadRequestId) return;
+        if (supervisorReport && !supervisorShepherdDisplayed) document.getElementById('supervisor-shepherd-body').innerHTML =
+          '<tr><td colspan="4">Shepherd visit totals are unavailable.</td></tr>';
         if (sundaySchoolAllowed) document.getElementById('report-total-sunday-school').textContent = 'Unavailable';
         status.textContent = error.message || 'Could not load report data.';
         console.error('Could not load report data:', error);
@@ -11357,11 +12054,13 @@
       currentReportPeriod = null;
       status.style.display = 'block';
       status.textContent = 'Loading your responsibility report…';
+      setShepherdReportValues('Loading…', 'Loading…', 'Loading…');
       const sundaySchoolAllowed = canOpenSundaySchool();
       if (sundaySchoolAllowed) document.getElementById('priest-kpi-sunday-school').textContent = 'Loading…';
       try {
         const priest = getLoggedInOfficerMember();
         if (!priest) {
+          setShepherdReportValues('Unavailable', 'Unavailable', 'Unavailable');
           if (sundaySchoolAllowed) document.getElementById('priest-kpi-sunday-school').textContent = 'Unavailable';
           status.textContent = 'Your officer record could not be found, so no report can be shown.';
           return;
@@ -11371,17 +12070,19 @@
           String(member.member_id) !== priestId);
         const scopeIds = new Set(scope.map(member => String(member.member_id)));
         document.getElementById('priest-report-title').textContent = `My Responsibility Report – ${formatOfficerName(priest)}`;
-        const [attendanceResult, titheResult, visitResult, dreamResult, sundaySchoolResult] = await Promise.all([
+        const [attendanceResult, titheResult, visitResult, dreamResult, sundaySchoolResult, shepherdResult] = await Promise.all([
           supabaseClient.from('attendance_records').select('*').gte('activity_date', start).lte('activity_date', end),
           supabaseClient.from('tithes').select('*').gte('tithe_date', start).lte('tithe_date', end),
           supabaseClient.from('prophetic_family_visits').select('*').gte('visit_date', start).lte('visit_date', end),
           supabaseClient.from('prophetic_dream_vision_records').select('*').gte('event_date', start).lte('event_date', end),
-          sundaySchoolAllowed ? sundaySchoolReportRequest(start, end) : Promise.resolve(null)
+          sundaySchoolAllowed ? sundaySchoolReportRequest(start, end) : Promise.resolve(null),
+          shepherdReportRequest(start, end)
         ]);
         if (requestId !== reportLoadRequestId) return;
         const errors = [attendanceResult, titheResult, visitResult, dreamResult]
           .filter(result => result.error).map(result => result.error.message);
         if (sundaySchoolResult) displaySundaySchoolReport(sundaySchoolResult, 'priest-kpi-sunday-school', errors);
+        displayShepherdReport(shepherdResult, errors);
 
         const attendance = getVisibleOperationalRecords('attendance_records', attendanceResult.data || [])
           .filter(record => scopeIds.has(String(record.member_id)));
@@ -11516,6 +12217,7 @@
           : `Your report for ${start} to ${end} is loaded.${chartNotice}`;
       } catch (error) {
         if (requestId !== reportLoadRequestId) return;
+        setShepherdReportValues('Unavailable', 'Unavailable', 'Unavailable');
         if (sundaySchoolAllowed) document.getElementById('priest-kpi-sunday-school').textContent = 'Unavailable';
         status.textContent = error.message || 'Could not load your report.';
         console.error('Could not load priest report:', error);
@@ -11627,7 +12329,10 @@
           ['Sunday School Report'],
           ['Reporting period', start, 'through', end],
           ['Sunday School Attendances (period)', document.getElementById('sunday-school-only-report-total').textContent],
-          ['Each Sunday attended is counted.']
+          ['Each Sunday attended is counted.'],
+          ['Shepherd Families Visited', document.getElementById('priest-shepherd-families').textContent],
+          ['Shepherd Individuals Visited', document.getElementById('priest-shepherd-individuals').textContent],
+          ['Shepherd Total Families / Individuals Visited', document.getElementById('priest-shepherd-total').textContent]
         ], `sunday_school_report_${start}_to_${end}.xls`, 'Sunday School');
         return;
       }
@@ -11651,12 +12356,12 @@
         ['Reporting period', start, 'through', end],
         ['Summary'],
         ...Array.from(document.querySelectorAll('#view-reporting .kpi-card'))
-          .filter(card => !card.classList.contains('sunday-school-report-card') || !card.hidden)
+          .filter(card => (!card.classList.contains('sunday-school-report-card') || !card.hidden) &&
+            (isPriestOnly() || !card.closest('#priest-shepherd-report')))
           .map(card => [
           card.querySelector('.kpi-title') ? card.querySelector('.kpi-title').textContent.trim() : 'Metric',
           card.querySelector('.kpi-value') ? card.querySelector('.kpi-value').textContent.trim() : ''
-        ]),
-        ['Prophetic Totals by Congregation']
+        ])
       ];
       const addTableRows = table => {
         if (!table) return;
@@ -11664,6 +12369,11 @@
           rows.push(Array.from(row.cells).map(cell => cell.textContent.replace(/\s+/g, ' ').trim()));
         });
       };
+      if (!isApostle && (isSystemAdmin || isShepherdSupervisor())) {
+        rows.push([document.getElementById('supervisor-shepherd-title').textContent]);
+        addTableRows(document.querySelector('#view-reporting #supervisor-shepherd-body')?.closest('table'));
+      }
+      rows.push(['Prophetic Totals by Congregation']);
       addTableRows(document.querySelector('#view-reporting #report-prophetic-by-congregation')?.closest('table'));
       rows.push(['Testimony Capture & Visits by Congregation']);
       addTableRows(document.querySelector('#view-reporting #report-testimony-by-congregation')?.closest('table'));
